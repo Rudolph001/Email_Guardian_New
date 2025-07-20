@@ -1,6 +1,7 @@
 # Email Guardian - Local Application Entry Point
 import os
 import logging
+import platform
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
@@ -14,38 +15,30 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 
-def create_app(config_class=LocalConfig):
-    """Application factory for local development"""
-    app = Flask(__name__)
-    app.config.from_object(config_class)
-    
-    # Initialize extensions
-    db.init_app(app)
-    
-    # Create upload and data directories
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['DATA_FOLDER'], exist_ok=True)
-    
-    # Import routes after app creation to avoid circular imports
-    with app.app_context():
-        # Import models to ensure tables are created
-        import models
-        
-        # Create database tables
-        db.create_all()
-        
-        # Import and register routes
-        from routes import *
-    
-    return app
+# Create the Flask app
+app = Flask(__name__)
+app.config.from_object(LocalConfig)
 
-# Create the app instance
-app = create_app()
+# Initialize extensions
+db.init_app(app)
+
+# Create upload and data directories
+os.makedirs(app.config.get('UPLOAD_FOLDER', 'uploads'), exist_ok=True)
+os.makedirs(app.config.get('DATA_FOLDER', 'data'), exist_ok=True)
+
+# Import models and routes after app creation
+with app.app_context():
+    # Import models to ensure tables are created
+    import models
+    
+    # Create database tables
+    db.create_all()
+
+# Import routes - this must be done after app is created
+import routes
 
 if __name__ == '__main__':
     # Check if running on Windows and use appropriate server
-    import platform
-    
     if platform.system() == 'Windows':
         try:
             from waitress import serve
