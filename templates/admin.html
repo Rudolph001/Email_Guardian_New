@@ -359,7 +359,212 @@ function showAlert(message, type) {
 }
 
 function loadMLKeywords() {
-        showAlert('ML Keywords Loaded!', 'success');
+        const container = document.getElementById('mlKeywordsContainer');
+        const keywordsDiv = document.getElementById('mlKeywords');
+        
+        if (container.style.display === 'none') {
+            container.style.display = 'block';
+            keywordsDiv.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading ML keywords...</p></div>';
+            
+            fetch('/api/ml-keywords')
+                .then(response => response.json())
+                .then(data => {
+                    keywordsDiv.innerHTML = `
+                        <h6>ML Keywords Summary</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Total Keywords</span>
+                                <span class="badge bg-primary">${data.total_keywords || 0}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Business Keywords</span>
+                                <span class="badge bg-success">${data.categories?.Business || 0}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Personal Keywords</span>
+                                <span class="badge bg-warning">${data.categories?.Personal || 0}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Suspicious Keywords</span>
+                                <span class="badge bg-danger">${data.categories?.Suspicious || 0}</span>
+                            </li>
+                        </ul>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error loading ML keywords:', error);
+                    keywordsDiv.innerHTML = '<div class="text-danger">Failed to load ML keywords</div>';
+                });
+        } else {
+            container.style.display = 'none';
+        }
     }
+
+function loadWhitelistDomains() {
+    const container = document.getElementById('whitelistDomains');
+    container.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading whitelist domains...</p></div>';
+    
+    fetch('/api/whitelist-domains')
+        .then(response => response.json())
+        .then(domains => {
+            if (domains.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-shield-alt fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No whitelist domains found</p>
+                        <button class="btn btn-sm btn-outline-primary" onclick="showAddDomainForm()">
+                            <i class="fas fa-plus"></i> Add Domain
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Whitelist Domains (${domains.length})</h6>
+                    <button class="btn btn-sm btn-outline-primary" onclick="showAddDomainForm()">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Domain</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            domains.forEach(domain => {
+                html += `
+                    <tr>
+                        <td><code>${domain.domain}</code></td>
+                        <td><span class="badge bg-secondary">${domain.domain_type}</span></td>
+                        <td>
+                            <span class="badge bg-${domain.is_active ? 'success' : 'warning'}">
+                                ${domain.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-outline-${domain.is_active ? 'warning' : 'success'}" 
+                                        onclick="toggleDomainStatus(${domain.id})" 
+                                        title="${domain.is_active ? 'Deactivate' : 'Activate'}">
+                                    <i class="fas fa-${domain.is_active ? 'pause' : 'play'}"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="deleteDomain(${domain.id})" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading whitelist domains:', error);
+            container.innerHTML = `
+                <div class="text-center text-danger py-3">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <p>Failed to load whitelist domains</p>
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadWhitelistDomains()">
+                        <i class="fas fa-redo"></i> Retry
+                    </button>
+                </div>
+            `;
+        });
+}
+
+function showAddDomainForm() {
+    const domain = prompt('Enter domain to add to whitelist:');
+    if (domain && domain.trim()) {
+        addDomainToWhitelist(domain.trim());
+    }
+}
+
+function addDomainToWhitelist(domain) {
+    fetch('/api/whitelist-domains', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            domain: domain,
+            domain_type: 'Corporate',
+            added_by: 'Admin'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess(data.message);
+            loadWhitelistDomains();
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error adding domain:', error);
+        showError('Failed to add domain to whitelist');
+    });
+}
+
+function toggleDomainStatus(domainId) {
+    fetch(`/api/whitelist-domains/${domainId}/toggle`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess(data.message);
+            loadWhitelistDomains();
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling domain status:', error);
+        showError('Failed to update domain status');
+    });
+}
+
+function deleteDomain(domainId) {
+    if (confirm('Are you sure you want to delete this whitelist domain?')) {
+        fetch(`/api/whitelist-domains/${domainId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(data.message);
+                loadWhitelistDomains();
+            } else {
+                showError(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting domain:', error);
+            showError('Failed to delete domain');
+        });
+    }
+}
+
+// Initialize whitelist domains on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadWhitelistDomains();
+});
 </script>
 {% endblock %}
