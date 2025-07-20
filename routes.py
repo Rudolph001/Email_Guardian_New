@@ -746,16 +746,20 @@ def api_toggle_exclusion_rule(rule_id):
 def api_whitelist_domains():
     """Get all whitelist domains or create new one"""
     if request.method == 'GET':
-        domains = WhitelistDomain.query.order_by(WhitelistDomain.added_at.desc()).all()
-        return jsonify([{
-            'id': domain.id,
-            'domain': domain.domain,
-            'domain_type': domain.domain_type,
-            'added_by': domain.added_by,
-            'added_at': domain.added_at.isoformat() if domain.added_at else None,
-            'notes': domain.notes,
-            'is_active': domain.is_active
-        } for domain in domains])
+        try:
+            domains = WhitelistDomain.query.order_by(WhitelistDomain.added_at.desc()).all()
+            return jsonify([{
+                'id': domain.id,
+                'domain': domain.domain,
+                'domain_type': domain.domain_type or 'Corporate',
+                'added_by': domain.added_by or 'System',
+                'added_at': domain.added_at.isoformat() if domain.added_at else datetime.utcnow().isoformat(),
+                'notes': domain.notes or '',
+                'is_active': domain.is_active if domain.is_active is not None else True
+            } for domain in domains])
+        except Exception as e:
+            logger.error(f"Error fetching whitelist domains: {str(e)}")
+            return jsonify({'error': 'Failed to fetch whitelist domains', 'details': str(e)}), 500
 
     elif request.method == 'POST':
         try:
