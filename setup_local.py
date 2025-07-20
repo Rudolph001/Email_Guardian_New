@@ -165,25 +165,77 @@ def display_instructions():
     print("- Check the console output for any error messages")
     print("- Ensure port 5000 is not already in use")
 
+def test_installation():
+    """Test if all required packages are installed"""
+    print("\nTesting installation...")
+    required_modules = [
+        ('flask', 'Flask'),
+        ('flask_sqlalchemy', 'Flask-SQLAlchemy'), 
+        ('pandas', 'pandas'),
+        ('numpy', 'numpy'),
+        ('sklearn', 'scikit-learn'),
+        ('networkx', 'networkx'),
+        ('email_validator', 'email-validator'),
+        ('waitress', 'waitress')
+    ]
+    
+    missing_modules = []
+    for module_name, package_name in required_modules:
+        try:
+            __import__(module_name)
+            print(f"✓ {package_name}")
+        except ImportError:
+            print(f"✗ {package_name} - MISSING")
+            missing_modules.append(package_name)
+    
+    if missing_modules:
+        print(f"\n⚠️  Missing packages: {', '.join(missing_modules)}")
+        print("Try running: python install_manual.py")
+        return False
+    else:
+        print("\n✅ All required packages are installed!")
+        return True
+
 def main():
     """Main setup function"""
     print("Email Guardian - Local Setup")
     print("="*40)
     
     if not check_python_version():
+        print("\n❌ Setup failed: Python version incompatible")
         return False
     
-    if not install_requirements():
+    install_success = install_requirements()
+    if not install_success:
+        print("\n⚠️  Package installation had issues, but continuing...")
+    
+    # Test installation regardless of install_requirements result
+    if not test_installation():
+        print("\n❌ Setup incomplete: Missing required packages")
+        print("\nTry these alternatives:")
+        print("1. Run: python install_manual.py")
+        print("2. Run: python local_simple.py (for basic test)")
         return False
     
     create_directories()
     
     if not setup_database():
-        return False
+        print("\n⚠️  Database setup had issues, but continuing...")
+        print("Database will be created automatically when you run the app.")
     
     create_environment_file()
     
-    display_instructions()
+    print("\n" + "=" * 50)
+    print("✅ EMAIL GUARDIAN SETUP COMPLETE!")
+    print("=" * 50)
+    print("\nStart options:")
+    print("1. Full app: python local_app.py")
+    print("2. Simple test: python local_simple.py")
+    print("3. Open browser to: http://127.0.0.1:5000")
+    print("\nTroubleshooting:")
+    print("- If errors occur: python install_manual.py")
+    print("- For basic test: python local_simple.py")
+    print("\nPress Ctrl+C to stop the server when running.")
     return True
 
 if __name__ == "__main__":
