@@ -12,6 +12,13 @@ Your local version now uses the same professional template system as the Replit 
 ## Installation Instructions
 
 ### 1. Install Dependencies
+
+**For Windows users with compiler issues:**
+```bash
+pip install -r requirements_minimal.txt
+```
+
+**For full features (requires C++ compiler):**
 ```bash
 pip install -r requirements_local.txt
 ```
