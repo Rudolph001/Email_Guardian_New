@@ -1,8 +1,7 @@
 # Email Guardian - Local Models (Standalone for local development)
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, Boolean, ForeignKey, JSON, Float
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey, JSON, Float
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
 import json
 
 Base = declarative_base()

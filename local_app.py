@@ -35,8 +35,9 @@ db.init_app(app)
 
 # Import models and create tables
 with app.app_context():
-    import models
-    db.create_all()
+    # Import local models that don't have circular dependencies
+    from local_models import Base
+    Base.metadata.create_all(db.engine)
     print("Database tables created successfully!")
 
 # Import routes after everything is set up
