@@ -170,16 +170,24 @@ def dashboard(session_id):
         logger.warning(f"Could not get ML insights: {str(e)}")
         ml_insights = {}
 
-    # Get BAU analysis
+    # Get BAU analysis (cached to prevent repeated calls)
     try:
-        bau_analysis = advanced_ml_engine.analyze_bau_patterns(session_id)
+        # Only run analysis if session is completed and we don't have cached results
+        if hasattr(session, 'bau_cached') and session.bau_cached:
+            bau_analysis = session.bau_cached
+        else:
+            bau_analysis = advanced_ml_engine.analyze_bau_patterns(session_id)
     except Exception as e:
         logger.warning(f"Could not get BAU analysis: {str(e)}")
         bau_analysis = {}
 
-    # Get attachment risk analytics
+    # Get attachment risk analytics (cached to prevent repeated calls)
     try:
-        attachment_analytics = advanced_ml_engine.analyze_attachment_risks(session_id)
+        # Only run analysis if session is completed and we don't have cached results
+        if hasattr(session, 'attachment_cached') and session.attachment_cached:
+            attachment_analytics = session.attachment_cached
+        else:
+            attachment_analytics = advanced_ml_engine.analyze_attachment_risks(session_id)
     except Exception as e:
         logger.warning(f"Could not get attachment analytics: {str(e)}")
         attachment_analytics = {}

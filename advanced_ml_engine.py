@@ -20,6 +20,10 @@ class AdvancedMLEngine:
     def analyze_bau_patterns(self, session_id):
         """Analyze Business As Usual communication patterns"""
         try:
+            # Check if we've already analyzed this session recently
+            if hasattr(self, '_bau_cache') and session_id in self._bau_cache:
+                return self._bau_cache[session_id]
+                
             logger.info(f"Analyzing BAU patterns for session {session_id}")
             
             # Get all records for the session
@@ -51,6 +55,11 @@ class AdvancedMLEngine:
                 'bau_statistics': self._calculate_bau_statistics(records)
             }
             
+            # Cache the result
+            if not hasattr(self, '_bau_cache'):
+                self._bau_cache = {}
+            self._bau_cache[session_id] = analysis
+            
             return analysis
             
         except Exception as e:
@@ -60,6 +69,10 @@ class AdvancedMLEngine:
     def analyze_attachment_risks(self, session_id):
         """Comprehensive attachment risk analysis"""
         try:
+            # Check if we've already analyzed this session recently
+            if hasattr(self, '_attachment_cache') and session_id in self._attachment_cache:
+                return self._attachment_cache[session_id]
+                
             logger.info(f"Analyzing attachment risks for session {session_id}")
             
             records_with_attachments = EmailRecord.query.filter(
@@ -92,6 +105,11 @@ class AdvancedMLEngine:
                 'top_risk_attachments': self._get_top_risk_attachments(records_with_attachments),
                 'recommendations': self._generate_attachment_recommendations(records_with_attachments)
             }
+            
+            # Cache the result
+            if not hasattr(self, '_attachment_cache'):
+                self._attachment_cache = {}
+            self._attachment_cache[session_id] = analysis
             
             return analysis
             
