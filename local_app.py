@@ -41,6 +41,7 @@ with app.app_context():
     print("Database tables created successfully!")
 
 # Import routes after everything is set up
+# Note: routes will import from local_app, so this import must come last
 import routes
 
 if __name__ == '__main__':

@@ -3,8 +3,8 @@ import os
 import gzip
 import logging
 from datetime import datetime
-from models import ProcessingSession, EmailRecord
-from app import db
+from local_models import ProcessingSession, EmailRecord
+from local_app import db
 
 logger = logging.getLogger(__name__)
 

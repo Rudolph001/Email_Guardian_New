@@ -4,8 +4,8 @@ import json
 import logging
 from datetime import datetime, timedelta
 from collections import defaultdict, Counter
-from models import EmailRecord, WhitelistDomain
-from app import db
+from local_models import EmailRecord, WhitelistDomain
+from local_app import db
 import re
 
 logger = logging.getLogger(__name__)

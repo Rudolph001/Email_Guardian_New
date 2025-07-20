@@ -2,8 +2,8 @@ import logging
 import re
 from collections import defaultdict, Counter
 from datetime import datetime
-from models import WhitelistDomain, EmailRecord, ProcessingSession
-from app import db
+from local_models import WhitelistDomain, EmailRecord, ProcessingSession
+from local_app import db
 
 logger = logging.getLogger(__name__)
 
