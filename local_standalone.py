@@ -38,7 +38,7 @@ app = Flask(__name__)
 # Configure app for local development
 app.secret_key = 'local-dev-key-change-in-production'
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/local_email_guardian.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///local_email_guardian.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     "pool_recycle": 300,
@@ -56,7 +56,6 @@ db.init_app(app)
 # Ensure upload directories exist
 os.makedirs('uploads', exist_ok=True)
 os.makedirs('data', exist_ok=True)
-os.makedirs('instance', exist_ok=True)
 
 # Define models inline to avoid import issues
 from sqlalchemy import Text, JSON
@@ -144,6 +143,7 @@ with app.app_context():
     print(f"Platform: {platform.system()} {platform.release()}")
     print(f"Python: {sys.version.split()[0]}")
 
+# Only run if called directly (not when imported)
 if __name__ == '__main__':
     print()
     print("Email Guardian is ready!")
