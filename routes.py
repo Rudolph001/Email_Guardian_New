@@ -467,6 +467,85 @@ def api_processing_errors(session_id):
         'resolved': error.resolved
     } for error in errors])
 
+@app.route('/admin/session/<session_id>', methods=['DELETE'])
+def delete_session(session_id):
+    """Delete a processing session and all associated data"""
+    try:
+        session = ProcessingSession.query.get_or_404(session_id)
+        
+        # Delete associated email records
+        EmailRecord.query.filter_by(session_id=session_id).delete()
+        
+        # Delete processing errors
+        ProcessingError.query.filter_by(session_id=session_id).delete()
+        
+        # Delete uploaded file if it exists
+        if session.data_path and os.path.exists(session.data_path):
+            os.remove(session.data_path)
+        
+        # Check for upload file
+        upload_files = [f for f in os.listdir(app.config.get('UPLOAD_FOLDER', 'uploads')) 
+                       if f.startswith(session_id)]
+        for file in upload_files:
+            file_path = os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), file)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        
+        # Delete session record
+        db.session.delete(session)
+        db.session.commit()
+        
+        logger.info(f"Session {session_id} deleted successfully")
+        return jsonify({'status': 'deleted'})
+        
+    except Exception as e:
+        logger.error(f"Error deleting session {session_id}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/sessions/cleanup', methods=['POST'])
+def cleanup_old_sessions():
+    """Delete sessions older than 30 days"""
+    try:
+        from datetime import timedelta
+        cutoff_date = datetime.utcnow() - timedelta(days=30)
+        
+        old_sessions = ProcessingSession.query.filter(
+            ProcessingSession.upload_time < cutoff_date
+        ).all()
+        
+        deleted_count = 0
+        for session in old_sessions:
+            try:
+                # Delete associated records
+                EmailRecord.query.filter_by(session_id=session.id).delete()
+                ProcessingError.query.filter_by(session_id=session.id).delete()
+                
+                # Delete files
+                if session.data_path and os.path.exists(session.data_path):
+                    os.remove(session.data_path)
+                
+                upload_files = [f for f in os.listdir(app.config.get('UPLOAD_FOLDER', 'uploads')) 
+                               if f.startswith(session.id)]
+                for file in upload_files:
+                    file_path = os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), file)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                
+                db.session.delete(session)
+                deleted_count += 1
+                
+            except Exception as e:
+                logger.warning(f"Could not delete session {session.id}: {str(e)}")
+                continue
+        
+        db.session.commit()
+        logger.info(f"Cleaned up {deleted_count} old sessions")
+        return jsonify({'status': 'completed', 'deleted_count': deleted_count})
+        
+    except Exception as e:
+        logger.error(f"Error during cleanup: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('404.html'), 404
