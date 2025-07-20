@@ -51,12 +51,15 @@
 <!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-lg-3 col-md-6">
-        <div class="card stats-card bg-gradient-primary text-white">
+        <div class="card stats-card bg-gradient-primary text-white interactive-card">
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div>
-                        <h3 class="mb-0" id="totalRecords">{{ stats.session_info.total_records or 0 }}</h3>
+                        <h3 class="mb-0 animated-number" id="totalRecords" data-target="{{ stats.session_info.total_records or 0 }}">0</h3>
                         <p class="mb-0">Total Records</p>
+                        <div class="animated-progress mt-2">
+                            <div class="progress-bar" style="width: 100%"></div>
+                        </div>
                     </div>
                     <div class="ms-auto">
                         <i class="fas fa-database fa-2x opacity-75"></i>
@@ -67,12 +70,15 @@
     </div>
     
     <div class="col-lg-3 col-md-6">
-        <div class="card stats-card bg-gradient-success text-white">
+        <div class="card stats-card bg-gradient-success text-white interactive-card">
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div>
-                        <h3 class="mb-0" id="analyzedRecords">{{ stats.session_info.processed_records or 0 }}</h3>
+                        <h3 class="mb-0 animated-number" id="analyzedRecords" data-target="{{ stats.session_info.processed_records or 0 }}">0</h3>
                         <p class="mb-0">Analyzed Records</p>
+                        <div class="animated-progress mt-2">
+                            <div class="progress-bar" style="width: {{ ((stats.session_info.processed_records or 0) / max(stats.session_info.total_records or 1, 1) * 100) }}%"></div>
+                        </div>
                     </div>
                     <div class="ms-auto">
                         <i class="fas fa-chart-line fa-2x opacity-75"></i>
@@ -83,12 +89,17 @@
     </div>
     
     <div class="col-lg-3 col-md-6">
-        <div class="card stats-card bg-gradient-danger text-white">
+        <div class="card stats-card bg-gradient-danger text-white interactive-card risk-indicator {% if (stats.risk_distribution.Critical or 0) > 0 %}critical{% endif %}">
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div>
-                        <h3 class="mb-0">{{ stats.risk_distribution.Critical or 0 }}</h3>
+                        <h3 class="mb-0 animated-number" id="criticalCases" data-target="{{ stats.risk_distribution.Critical or 0 }}">0</h3>
                         <p class="mb-0">Critical Cases</p>
+                        {% if (stats.risk_distribution.Critical or 0) > 0 %}
+                        <small class="d-block mt-1">
+                            <i class="fas fa-exclamation-circle"></i> Immediate attention required
+                        </small>
+                        {% endif %}
                     </div>
                     <div class="ms-auto">
                         <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
@@ -99,12 +110,15 @@
     </div>
     
     <div class="col-lg-3 col-md-6">
-        <div class="card stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="card stats-card interactive-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
             <div class="card-body text-white">
                 <div class="d-flex align-items-center">
                     <div>
-                        <h3 class="mb-0" id="avgRiskScore">{{ "%.3f"|format(ml_insights.average_risk_score or 0) }}</h3>
+                        <h3 class="mb-0 animated-number" id="avgRiskScore" data-target="{{ "%.3f"|format(ml_insights.average_risk_score or 0) }}">0.000</h3>
                         <p class="mb-0">Avg Risk Score</p>
+                        <div class="animated-progress mt-2">
+                            <div class="progress-bar" style="width: {{ (ml_insights.average_risk_score or 0) * 100 }}%"></div>
+                        </div>
                     </div>
                     <div class="ms-auto">
                         <i class="fas fa-brain fa-2x opacity-75"></i>
@@ -115,11 +129,40 @@
     </div>
 </div>
 
+<!-- Key Insights Section -->
+{% if (stats.risk_distribution.Critical or 0) > 0 or (ml_insights.average_risk_score or 0) > 0.7 %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="insight-highlight">
+            <h6 class="mb-2"><i class="fas fa-lightbulb text-warning"></i> Key Security Insights</h6>
+            <div class="row">
+                {% if (stats.risk_distribution.Critical or 0) > 0 %}
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                        <span><strong>{{ stats.risk_distribution.Critical }}</strong> critical cases require immediate review</span>
+                    </div>
+                </div>
+                {% endif %}
+                {% if (ml_insights.average_risk_score or 0) > 0.7 %}
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-chart-line text-warning me-2"></i>
+                        <span>High average risk score detected: <strong>{{ "%.3f"|format(ml_insights.average_risk_score) }}</strong></span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Main Content Grid -->
 <div class="row">
     <!-- ML Insights Chart -->
-    <div class="col-lg-6 mb-4">
-        <div class="card h-100">
+    <div class="col-lg-6 mb-4 fade-in">
+        <div class="card h-100 interactive-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-chart-pie text-primary"></i>
@@ -135,8 +178,8 @@
     </div>
     
     <!-- Processing Workflow Status -->
-    <div class="col-lg-6 mb-4">
-        <div class="card h-100">
+    <div class="col-lg-6 mb-4 fade-in-delay-1">
+        <div class="card h-100 interactive-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-cogs text-primary"></i>
@@ -153,9 +196,12 @@
                                 <i class="fas fa-clock text-warning fa-2x"></i>
                             {% endif %}
                         </div>
-                        <div>
+                        <div class="flex-grow-1">
                             <h6 class="mb-1">Exclusion Rules</h6>
                             <p class="text-muted mb-0">Filter records based on exclusion criteria</p>
+                            <div class="animated-progress mt-2">
+                                <div class="progress-bar" style="width: {% if stats.workflow_stages.exclusion_applied %}100{% else %}25{% endif %}%"></div>
+                            </div>
                         </div>
                     </div>
                     
@@ -167,9 +213,12 @@
                                 <i class="fas fa-clock text-warning fa-2x"></i>
                             {% endif %}
                         </div>
-                        <div>
+                        <div class="flex-grow-1">
                             <h6 class="mb-1">Whitelist Filtering</h6>
                             <p class="text-muted mb-0">Remove trusted domain communications</p>
+                            <div class="animated-progress mt-2">
+                                <div class="progress-bar" style="width: {% if stats.workflow_stages.whitelist_applied %}100{% else %}50{% endif %}%"></div>
+                            </div>
                         </div>
                     </div>
                     
@@ -181,9 +230,12 @@
                                 <i class="fas fa-clock text-warning fa-2x"></i>
                             {% endif %}
                         </div>
-                        <div>
+                        <div class="flex-grow-1">
                             <h6 class="mb-1">Security Rules</h6>
                             <p class="text-muted mb-0">Apply security rules and threat detection</p>
+                            <div class="animated-progress mt-2">
+                                <div class="progress-bar" style="width: {% if stats.workflow_stages.rules_applied %}100{% else %}75{% endif %}%"></div>
+                            </div>
                         </div>
                     </div>
                     
@@ -195,9 +247,12 @@
                                 <i class="fas fa-clock text-warning fa-2x"></i>
                             {% endif %}
                         </div>
-                        <div>
+                        <div class="flex-grow-1">
                             <h6 class="mb-1">ML Analysis</h6>
                             <p class="text-muted mb-0">Machine learning anomaly detection</p>
+                            <div class="animated-progress mt-2">
+                                <div class="progress-bar" style="width: {% if stats.workflow_stages.ml_applied %}100{% else %}90{% endif %}%"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -208,8 +263,8 @@
 
 <!-- BAU Analysis and Attachment Risk -->
 <div class="row">
-    <div class="col-lg-8 mb-4">
-        <div class="card">
+    <div class="col-lg-8 mb-4 fade-in-delay-2">
+        <div class="card interactive-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-business-time text-primary"></i>
@@ -219,16 +274,19 @@
             <div class="card-body">
                 <div class="row mb-3">
                     <div class="col-md-4 text-center">
-                        <h4 class="text-primary" id="bauScore">{{ "%.1f"|format(bau_analysis.bau_statistics.bau_score or 0) }}</h4>
+                        <h4 class="text-primary animated-number" id="bauScore" data-target="{{ "%.1f"|format(bau_analysis.bau_statistics.bau_score or 0) }}">0.0</h4>
                         <p class="text-muted mb-0">BAU Score</p>
+                        <div class="animated-progress mt-2">
+                            <div class="progress-bar" style="width: {{ (bau_analysis.bau_statistics.bau_score or 0) }}%"></div>
+                        </div>
                     </div>
                     <div class="col-md-4 text-center">
-                        <h4 class="text-success" id="highVolumeComms">{{ bau_analysis.high_volume_pairs|length if bau_analysis.high_volume_pairs else 0 }}</h4>
+                        <h4 class="text-success animated-number" id="highVolumeComms" data-target="{{ bau_analysis.high_volume_pairs|length if bau_analysis.high_volume_pairs else 0 }}">0</h4>
                         <p class="text-muted mb-0">High Volume Pairs</p>
                     </div>
                     <div class="col-md-4 text-center">
-                        <h4 class="text-info">{{ "%.1f"|format((bau_analysis.bau_statistics.external_ratio or 0) * 100) }}%</h4>
-                        <p class="text-muted mb-0">External Ratio</p>
+                        <h4 class="text-info animated-number" id="externalRatio" data-target="{{ "%.1f"|format((bau_analysis.bau_statistics.external_ratio or 0) * 100) }}">0.0</h4>
+                        <p class="text-muted mb-0">External Ratio %</p>
                     </div>
                 </div>
                 
@@ -241,12 +299,12 @@
                     <h6>Top Whitelist Recommendations:</h6>
                     <div class="row">
                         {% for rec in bau_analysis.whitelist_recommendations[:3] %}
-                        <div class="col-md-4">
-                            <div class="border rounded p-2 mb-2">
+                        <div class="col-md-4 fade-in-delay-{{ loop.index }}">
+                            <div class="border rounded p-2 mb-2 interactive-card" style="cursor: pointer;">
                                 <strong>{{ rec.domain }}</strong><br>
                                 <small class="text-muted">
-                                    {{ rec.communication_count }} communications<br>
-                                    Trust Score: {{ rec.trust_score }}
+                                    <span class="animated-number" data-target="{{ rec.communication_count }}">0</span> communications<br>
+                                    Trust Score: <span class="animated-number" data-target="{{ rec.trust_score }}">0</span>
                                 </small>
                             </div>
                         </div>
@@ -258,8 +316,8 @@
         </div>
     </div>
     
-    <div class="col-lg-4 mb-4">
-        <div class="card h-100">
+    <div class="col-lg-4 mb-4 fade-in-delay-3">
+        <div class="card h-100 interactive-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-paperclip text-primary"></i>
@@ -270,15 +328,15 @@
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span>Total Attachments:</span>
-                        <span class="fw-bold" id="totalAttachments">{{ attachment_analytics.total_attachments or 0 }}</span>
+                        <span class="fw-bold animated-number" id="totalAttachments" data-target="{{ attachment_analytics.total_attachments or 0 }}">0</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span>High Risk:</span>
-                        <span class="fw-bold text-danger" id="highRiskAttachments">{{ attachment_analytics.risk_distribution.high_risk_count or 0 }}</span>
+                        <span class="fw-bold text-danger animated-number" id="highRiskAttachments" data-target="{{ attachment_analytics.risk_distribution.high_risk_count or 0 }}">0</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
                         <span>Avg Risk Score:</span>
-                        <span class="fw-bold">{{ "%.2f"|format(attachment_analytics.risk_distribution.mean_risk or 0) }}</span>
+                        <span class="fw-bold animated-number" id="avgAttachmentRisk" data-target="{{ "%.2f"|format(attachment_analytics.risk_distribution.mean_risk or 0) }}">0.00</span>
                     </div>
                 </div>
                 

@@ -114,6 +114,39 @@ def processing_status(session_id):
         'error_message': session.error_message
     }
 
+@app.route('/api/dashboard-stats/<session_id>')
+def dashboard_stats(session_id):
+    """Get real-time dashboard statistics for animations"""
+    try:
+        # Get basic stats
+        stats = session_manager.get_processing_stats(session_id)
+        ml_insights = ml_engine.get_insights(session_id)
+        
+        # Get real-time counts
+        total_records = EmailRecord.query.filter_by(session_id=session_id).count()
+        critical_cases = EmailRecord.query.filter_by(
+            session_id=session_id, 
+            risk_level='Critical'
+        ).filter(EmailRecord.whitelisted != True).count()
+        
+        whitelisted_records = EmailRecord.query.filter_by(
+            session_id=session_id,
+            whitelisted=True
+        ).count()
+        
+        return jsonify({
+            'total_records': total_records,
+            'critical_cases': critical_cases,
+            'avg_risk_score': ml_insights.get('average_risk_score', 0),
+            'whitelisted_records': whitelisted_records,
+            'processing_complete': stats.get('session_info', {}).get('status') == 'completed',
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting dashboard stats: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/dashboard/<session_id>')
 def dashboard(session_id):
     """Main dashboard with processing statistics and ML insights"""

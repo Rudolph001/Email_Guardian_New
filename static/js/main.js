@@ -26,6 +26,9 @@ function initializeApplication() {
         initializeCharts();
     }
 
+    // Initialize dashboard animations
+    initializeDashboardAnimations();
+
     // Initialize DataTables if available
     if (typeof DataTable !== 'undefined') {
         initializeDataTables();
@@ -39,6 +42,11 @@ function initializeApplication() {
     if (sessionId) {
         currentSessionId = sessionId;
         loadSessionContent();
+        
+        // Start real-time updates for dashboard
+        if (window.location.pathname.includes('/dashboard/')) {
+            setTimeout(startDashboardUpdates, 5000); // Start after initial load
+        }
     }
 }
 
@@ -93,6 +101,232 @@ function setupEventListeners() {
     // Auto-refresh for processing status
     if (document.querySelector('.processing-status.processing')) {
         setInterval(checkProcessingStatus, 5000);
+    }
+}
+
+// Dashboard Animations Functions
+function initializeDashboardAnimations() {
+    // Initialize animated counters
+    initializeAnimatedCounters();
+    
+    // Initialize insight highlighting
+    initializeInsightHighlighting();
+    
+    // Initialize interactive card effects
+    initializeInteractiveCards();
+    
+    // Initialize chart animations
+    initializeChartAnimations();
+}
+
+function initializeAnimatedCounters() {
+    const animatedNumbers = document.querySelectorAll('.animated-number');
+    
+    animatedNumbers.forEach((element, index) => {
+        const target = parseFloat(element.dataset.target) || 0;
+        const isDecimal = element.dataset.target && element.dataset.target.includes('.');
+        const decimals = isDecimal ? (element.dataset.target.split('.')[1]?.length || 2) : 0;
+        
+        // Delay animation for staggered effect
+        setTimeout(() => {
+            animateCounter(element, 0, target, 2000, decimals);
+        }, index * 200);
+    });
+}
+
+function animateCounter(element, start, end, duration, decimals = 0) {
+    const startTimestamp = performance.now();
+    const step = (timestamp) => {
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const current = start + (end - start) * easeOutQuart(progress);
+        
+        if (decimals > 0) {
+            element.textContent = current.toFixed(decimals);
+        } else {
+            element.textContent = Math.floor(current);
+        }
+        
+        if (progress < 1) {
+            requestAnimationFrame(step);
+        } else {
+            // Add completion effect
+            element.style.animation = 'bounce 0.5s ease-out';
+            setTimeout(() => {
+                element.style.animation = '';
+            }, 500);
+        }
+    };
+    requestAnimationFrame(step);
+}
+
+function easeOutQuart(t) {
+    return 1 - (--t) * t * t * t;
+}
+
+function initializeInsightHighlighting() {
+    // Highlight critical insights with pulsing animation
+    const criticalElements = document.querySelectorAll('.risk-indicator.critical');
+    
+    criticalElements.forEach(element => {
+        element.addEventListener('mouseenter', () => {
+            element.style.animation = 'pulseGlow 1s infinite';
+        });
+        
+        element.addEventListener('mouseleave', () => {
+            element.style.animation = 'pulseGlow 3s infinite';
+        });
+    });
+    
+    // Auto-highlight insights based on thresholds
+    setTimeout(() => {
+        autoHighlightInsights();
+    }, 3000);
+}
+
+function autoHighlightInsights() {
+    const criticalCases = parseInt(document.getElementById('criticalCases')?.textContent) || 0;
+    const avgRiskScore = parseFloat(document.getElementById('avgRiskScore')?.textContent) || 0;
+    
+    if (criticalCases > 0) {
+        showInsightPopup('Critical cases detected! Review immediately.', 'danger');
+    } else if (avgRiskScore > 0.7) {
+        showInsightPopup('High average risk score detected. Monitor closely.', 'warning');
+    } else if (avgRiskScore < 0.3) {
+        showInsightPopup('Low risk profile detected. System appears secure.', 'success');
+    }
+}
+
+function showInsightPopup(message, type) {
+    const popup = document.createElement('div');
+    popup.className = `alert alert-${type} alert-dismissible fade show insight-popup`;
+    popup.style.position = 'fixed';
+    popup.style.top = '20px';
+    popup.style.right = '20px';
+    popup.style.zIndex = '9999';
+    popup.style.minWidth = '300px';
+    popup.style.animation = 'slideInRight 0.5s ease-out';
+    
+    popup.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-lightbulb me-2"></i>
+            <span>${message}</span>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(popup);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (popup.parentNode) {
+            popup.style.animation = 'slideOutRight 0.5s ease-out';
+            setTimeout(() => {
+                popup.remove();
+            }, 500);
+        }
+    }, 5000);
+}
+
+function initializeInteractiveCards() {
+    const interactiveCards = document.querySelectorAll('.interactive-card');
+    
+    interactiveCards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            // Add glow effect
+            card.style.boxShadow = '0 0 30px rgba(13, 110, 253, 0.3)';
+            
+            // Animate child elements
+            const animatedElements = card.querySelectorAll('.animated-number, .progress-bar');
+            animatedElements.forEach(el => {
+                el.style.transform = 'scale(1.05)';
+                el.style.transition = 'transform 0.3s ease';
+            });
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.boxShadow = '';
+            
+            const animatedElements = card.querySelectorAll('.animated-number, .progress-bar');
+            animatedElements.forEach(el => {
+                el.style.transform = '';
+            });
+        });
+    });
+}
+
+function initializeChartAnimations() {
+    // Enhanced Chart.js configuration with animations
+    if (typeof Chart !== 'undefined') {
+        Chart.defaults.animation = {
+            duration: 2000,
+            easing: 'easeOutQuart',
+            delay: (context) => {
+                return context.type === 'data' && context.mode === 'default'
+                    ? context.dataIndex * 100
+                    : 0;
+            }
+        };
+        
+        Chart.defaults.elements.arc.borderWidth = 2;
+        Chart.defaults.elements.arc.hoverBorderWidth = 4;
+    }
+}
+
+// Real-time dashboard updates
+function startDashboardUpdates() {
+    if (currentSessionId) {
+        // Update dashboard stats every 30 seconds
+        setInterval(() => {
+            updateDashboardStats();
+        }, 30000);
+    }
+}
+
+function updateDashboardStats() {
+    fetch(`/api/dashboard-stats/${currentSessionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error updating dashboard stats:', data.error);
+                return;
+            }
+            
+            // Update counters with new values
+            updateAnimatedCounter('totalRecords', data.total_records);
+            updateAnimatedCounter('criticalCases', data.critical_cases);
+            updateAnimatedCounter('avgRiskScore', data.avg_risk_score, 3);
+            
+            // Show notification if critical cases increase
+            const currentCritical = parseInt(document.getElementById('criticalCases')?.textContent) || 0;
+            if (data.critical_cases > currentCritical) {
+                showInsightPopup(`New critical case detected! Total: ${data.critical_cases}`, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching dashboard stats:', error);
+        });
+}
+
+function updateAnimatedCounter(elementId, newValue, decimals = 0) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        const currentValue = parseFloat(element.textContent) || 0;
+        if (currentValue !== newValue) {
+            // Highlight the change
+            element.style.background = 'rgba(13, 110, 253, 0.2)';
+            element.style.borderRadius = '4px';
+            element.style.padding = '2px 4px';
+            
+            // Animate to new value
+            animateCounter(element, currentValue, newValue, 1000, decimals);
+            
+            // Remove highlight after animation
+            setTimeout(() => {
+                element.style.background = '';
+                element.style.borderRadius = '';
+                element.style.padding = '';
+            }, 1500);
+        }
     }
 }
 
