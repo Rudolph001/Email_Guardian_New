@@ -86,7 +86,14 @@ cd path/to/email-guardian
 
 # Install dependencies
 pip install -r requirements_local.txt
+
+# If you still get circular import errors, use the standalone version:
+python local_standalone.py
 ```
+
+### Note on Standalone vs Full Version
+- `local_standalone.py` - Simplified version with professional UI (recommended for local use)
+- `local_app.py` - Full featured version that mirrors Replit deployment exactly
 
 ### If templates are not found:
 Make sure the `templates/` and `static/` directories are in the same folder as your Python files.
