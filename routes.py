@@ -310,8 +310,14 @@ def rules():
 @app.route('/api/ml_insights/<session_id>')
 def api_ml_insights(session_id):
     """Get ML analysis data for dashboard charts"""
-    insights = ml_engine.get_insights(session_id)
-    return jsonify(insights)
+    try:
+        insights = ml_engine.get_insights(session_id)
+        if not insights:
+            return jsonify({'error': 'No insights available'}), 404
+        return jsonify(insights)
+    except Exception as e:
+        logger.error(f"Error getting ML insights for session {session_id}: {str(e)}")
+        return jsonify({'error': 'Failed to load ML insights', 'details': str(e)}), 500
 
 @app.route('/api/bau_analysis/<session_id>')
 def api_bau_analysis(session_id):

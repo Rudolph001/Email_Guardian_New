@@ -199,18 +199,36 @@ async function loadMLInsights(sessionId) {
     try {
         showLoading('Loading ML insights...');
         const response = await fetch(`/api/ml_insights/${sessionId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
         
         if (data.error) {
-            showError('Failed to load ML insights: ' + data.error);
-            return;
+            console.warn('ML insights error:', data.error);
+            // Still update display with default/available data
+            updateMLInsightsDisplay(data);
+        } else {
+            updateMLInsightsDisplay(data);
         }
         
-        updateMLInsightsDisplay(data);
         hideLoading();
     } catch (error) {
         console.error('Error loading ML insights:', error);
-        showError('Failed to load ML insights');
+        showError('Failed to load ML insights: ' + error.message);
+        
+        // Provide fallback data
+        updateMLInsightsDisplay({
+            total_records: 0,
+            analyzed_records: 0,
+            risk_distribution: {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0},
+            average_risk_score: 0.0,
+            processing_complete: false,
+            error: 'Failed to load data'
+        });
+        
         hideLoading();
     }
 }
@@ -405,7 +423,7 @@ async function loadWhitelistAnalysis(sessionId) {
 
 // Display Functions
 function updateMLInsightsDisplay(data) {
-    // Update statistics
+    // Update statistics with safe fallbacks
     const totalRecords = document.getElementById('totalRecords');
     const analyzedRecords = document.getElementById('analyzedRecords');
     const avgRiskScore = document.getElementById('avgRiskScore');
@@ -414,9 +432,21 @@ function updateMLInsightsDisplay(data) {
     if (analyzedRecords) analyzedRecords.textContent = data.analyzed_records || 0;
     if (avgRiskScore) avgRiskScore.textContent = (data.average_risk_score || 0).toFixed(3);
     
-    // Update risk distribution chart
-    if (data.risk_distribution && document.getElementById('mlInsightsChart')) {
-        createRiskDistributionChart(data.risk_distribution);
+    // Update risk distribution chart with safe fallbacks
+    const riskDistribution = data.risk_distribution || {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0};
+    const chartElement = document.getElementById('mlInsightsChart');
+    
+    if (chartElement) {
+        try {
+            createRiskDistributionChart(riskDistribution);
+        } catch (error) {
+            console.error('Error creating risk distribution chart:', error);
+        }
+    }
+    
+    // Show error message if present
+    if (data.error) {
+        console.warn('ML Insights warning:', data.error);
     }
 }
 

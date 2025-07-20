@@ -270,7 +270,7 @@
                         </li>
                         <li class="d-flex justify-content-between">
                             <span>Multi-Domain Communicators:</span>
-                            <span class="fw-bold">{{ analysis.sender_profiles.values()|selectattr('domains_contacted', 'defined')|selectattr('domains_contacted', 'length', 5)|list|length if analysis.sender_profiles else 0 }}</span>
+                            <span class="fw-bold">{{ analysis.sender_profiles.values()|selectattr('domains_contacted', 'defined')|select('domains_contacted')|select('length')|list|length if analysis.sender_profiles else 0 }}</span>
                         </li>
                         <li class="d-flex justify-content-between">
                             <span>Suspicious Patterns:</span>

@@ -399,14 +399,22 @@ class MLEngine:
             session_records = EmailRecord.query.filter_by(session_id=session_id).all()
             
             if not session_records:
-                return {'error': 'No records found for session'}
+                return {
+                    'total_records': 0,
+                    'analyzed_records': 0,
+                    'risk_distribution': {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0},
+                    'average_risk_score': 0.0,
+                    'processing_complete': False,
+                    'error': 'No records found for session'
+                }
             
             # Calculate statistics
             total_records = len(session_records)
             analyzed_records = len([r for r in session_records if r.ml_risk_score is not None])
             
-            risk_distribution = {}
-            avg_risk_score = 0
+            # Initialize risk distribution with default values
+            risk_distribution = {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0}
+            avg_risk_score = 0.0
             
             if analyzed_records > 0:
                 risk_levels = [r.risk_level for r in session_records if r.risk_level]
@@ -414,13 +422,13 @@ class MLEngine:
                     risk_distribution[level] = risk_levels.count(level)
                 
                 risk_scores = [r.ml_risk_score for r in session_records if r.ml_risk_score is not None]
-                avg_risk_score = np.mean(risk_scores) if risk_scores else 0
+                avg_risk_score = float(np.mean(risk_scores)) if risk_scores else 0.0
             
             insights = {
                 'total_records': total_records,
                 'analyzed_records': analyzed_records,
                 'risk_distribution': risk_distribution,
-                'average_risk_score': float(avg_risk_score),
+                'average_risk_score': avg_risk_score,
                 'processing_complete': analyzed_records > 0
             }
             
@@ -428,4 +436,11 @@ class MLEngine:
             
         except Exception as e:
             logger.error(f"Error getting insights for session {session_id}: {str(e)}")
-            return {'error': str(e)}
+            return {
+                'total_records': 0,
+                'analyzed_records': 0,
+                'risk_distribution': {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0},
+                'average_risk_score': 0.0,
+                'processing_complete': False,
+                'error': str(e)
+            }
