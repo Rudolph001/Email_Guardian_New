@@ -57,24 +57,40 @@
                                 <div class="stage-item" id="stage-exclusion">
                                     <i class="fas fa-filter stage-icon"></i>
                                     <small>Exclusion Rules</small>
+                                    <div class="stage-stats">
+                                        <span class="badge bg-secondary" id="excluded-count">-</span>
+                                        <small class="text-muted d-block">Excluded</small>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="stage-item" id="stage-whitelist">
                                     <i class="fas fa-list-check stage-icon"></i>
                                     <small>Whitelist Filter</small>
+                                    <div class="stage-stats">
+                                        <span class="badge bg-success" id="whitelisted-count">-</span>
+                                        <small class="text-muted d-block">Whitelisted</small>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="stage-item" id="stage-rules">
                                     <i class="fas fa-gavel stage-icon"></i>
                                     <small>Rule Engine</small>
+                                    <div class="stage-stats">
+                                        <span class="badge bg-warning" id="rules-matched-count">-</span>
+                                        <small class="text-muted d-block">Rule Matches</small>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="stage-item" id="stage-ml">
                                     <i class="fas fa-brain stage-icon"></i>
                                     <small>ML Analysis</small>
+                                    <div class="stage-stats">
+                                        <span class="badge bg-danger" id="critical-cases-count">-</span>
+                                        <small class="text-muted d-block">Critical Cases</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -205,6 +221,19 @@
 .stage-item.completed .stage-icon {
     color: #28a745;
 }
+
+.stage-stats {
+    margin-top: 0.5rem;
+}
+
+.stage-stats .badge {
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.stage-stats small {
+    font-size: 0.7rem;
+}
 </style>
 
 <script>
@@ -253,6 +282,10 @@ function updateStageIndicators(data) {
     
     if (progress > 0) {
         document.getElementById('stage-exclusion').classList.add('active');
+        // Update stage stats if available
+        if (data.workflow_stats) {
+            updateStageStats(data.workflow_stats);
+        }
     }
     if (progress > 25) {
         document.getElementById('stage-exclusion').classList.add('completed');
@@ -268,6 +301,22 @@ function updateStageIndicators(data) {
     }
     if (progress >= 100) {
         document.getElementById('stage-ml').classList.add('completed');
+    }
+}
+
+function updateStageStats(workflowStats) {
+    // Update stage statistics
+    if (workflowStats.excluded_count !== undefined) {
+        document.getElementById('excluded-count').textContent = workflowStats.excluded_count;
+    }
+    if (workflowStats.whitelisted_count !== undefined) {
+        document.getElementById('whitelisted-count').textContent = workflowStats.whitelisted_count;
+    }
+    if (workflowStats.rules_matched_count !== undefined) {
+        document.getElementById('rules-matched-count').textContent = workflowStats.rules_matched_count;
+    }
+    if (workflowStats.critical_cases_count !== undefined) {
+        document.getElementById('critical-cases-count').textContent = workflowStats.critical_cases_count;
     }
 }
 
