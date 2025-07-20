@@ -93,7 +93,7 @@
                         <i class="fas fa-trash"></i> Cleanup Old Sessions
                     </button>
                 </div>
-                
+
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -232,7 +232,7 @@
                                 <i class="fas fa-plus"></i> Add Domains
                             </button>
                         </form>
-                        
+
                         <div class="mt-4">
                             <h6>Bulk Operations</h6>
                             <div class="d-grid gap-2">
@@ -350,26 +350,26 @@
                                 <dl class="row">
                                     <dt class="col-sm-6">Application Version:</dt>
                                     <dd class="col-sm-6">Email Guardian v1.0</dd>
-                                    
+
                                     <dt class="col-sm-6">Database:</dt>
                                     <dd class="col-sm-6">SQLite</dd>
-                                    
+
                                     <dt class="col-sm-6">Upload Directory:</dt>
                                     <dd class="col-sm-6"><code>uploads/</code></dd>
-                                    
+
                                     <dt class="col-sm-6">Data Directory:</dt>
                                     <dd class="col-sm-6"><code>data/</code></dd>
-                                    
+
                                     <dt class="col-sm-6">Max File Size:</dt>
                                     <dd class="col-sm-6">500 MB</dd>
-                                    
+
                                     <dt class="col-sm-6">Chunk Size:</dt>
                                     <dd class="col-sm-6">2,500 records</dd>
                                 </dl>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-6">
                         <div class="card">
                             <div class="card-header">
@@ -395,7 +395,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="card mt-3">
                             <div class="card-header">
                                 <h6 class="card-title mb-0">Storage Usage</h6>
@@ -448,11 +448,11 @@ document.getElementById('riskScore').addEventListener('input', function() {
 // Keyword form submission
 document.getElementById('keywordForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const keyword = document.getElementById('keyword').value;
     const category = document.getElementById('category').value;
     const riskScore = document.getElementById('riskScore').value;
-    
+
     // In a real implementation, this would submit to the backend
     showSuccess(`Keyword "${keyword}" added successfully`);
     this.reset();
@@ -466,7 +466,7 @@ function viewSession(sessionId) {
 
 function exportSession(sessionId) {
     showLoading('Exporting session data...');
-    
+
     // TODO: Implement actual export functionality
     setTimeout(() => {
         hideLoading();
@@ -477,7 +477,7 @@ function exportSession(sessionId) {
 function deleteSession(sessionId) {
     if (confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
         showLoading('Deleting session...');
-        
+
         fetch(`/admin/session/${sessionId}`, {
             method: 'DELETE',
             headers: {
@@ -527,16 +527,16 @@ function showSessionError(sessionId, errorMessage) {
             </div>
         </div>
     `;
-    
+
     // Remove existing modal
     const existingModal = document.getElementById('errorModal');
     if (existingModal) {
         existingModal.remove();
     }
-    
+
     // Add new modal to body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
+
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('errorModal'));
     modal.show();
@@ -545,7 +545,7 @@ function showSessionError(sessionId, errorMessage) {
 function cleanupOldSessions() {
     if (confirm('Delete all sessions older than 30 days?')) {
         showLoading('Cleaning up old sessions...');
-        
+
         fetch('/admin/sessions/cleanup', {
             method: 'POST',
             headers: {
@@ -575,7 +575,7 @@ function cleanupOldSessions() {
 function removeDomain(domain) {
     if (confirm(`Remove "${domain}" from whitelist?`)) {
         showLoading('Removing domain...');
-        
+
         setTimeout(() => {
             hideLoading();
             showSuccess(`Domain "${domain}" removed from whitelist`);
@@ -604,7 +604,7 @@ function importWhitelist() {
 
 function exportWhitelist() {
     showLoading('Exporting whitelist...');
-    
+
     setTimeout(() => {
         hideLoading();
         showSuccess('Whitelist exported successfully');
@@ -620,7 +620,7 @@ function editKeyword(keywordId) {
 function deleteKeyword(keywordId) {
     if (confirm('Delete this keyword?')) {
         showLoading('Deleting keyword...');
-        
+
         setTimeout(() => {
             hideLoading();
             showSuccess('Keyword deleted successfully');
@@ -632,7 +632,7 @@ function deleteKeyword(keywordId) {
 // System functions
 function checkSystemHealth() {
     showLoading('Checking system health...');
-    
+
     setTimeout(() => {
         hideLoading();
         showSuccess('System health check completed - All systems operational');
@@ -642,7 +642,7 @@ function checkSystemHealth() {
 function optimizeDatabase() {
     if (confirm('Optimize database? This may take a few minutes.')) {
         showLoading('Optimizing database...');
-        
+
         setTimeout(() => {
             hideLoading();
             showSuccess('Database optimization completed');
@@ -653,7 +653,7 @@ function optimizeDatabase() {
 function clearCache() {
     if (confirm('Clear all cached data?')) {
         showLoading('Clearing cache...');
-        
+
         setTimeout(() => {
             hideLoading();
             showSuccess('Cache cleared successfully');
@@ -663,7 +663,7 @@ function clearCache() {
 
 function exportSystemLogs() {
     showLoading('Preparing log export...');
-    
+
     setTimeout(() => {
         hideLoading();
         showSuccess('System logs exported successfully');
@@ -673,12 +673,54 @@ function exportSystemLogs() {
 function backupDatabase() {
     if (confirm('Create database backup? This may take a few minutes.')) {
         showLoading('Creating database backup...');
-        
+
         setTimeout(() => {
             hideLoading();
             showSuccess('Database backup created successfully');
         }, 3000);
     }
 }
+
+function deleteSession(sessionId) {
+        if (confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+            fetch(`/admin/session/${sessionId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    alert('Session deleted successfully');
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting session');
+            });
+        }
+    }
+
+    function populateKeywords() {
+        if (confirm('This will add default ML keywords to the database. Continue?')) {
+            fetch('/admin/keywords/populate', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    alert(`Success: ${data.message}`);
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error populating keywords');
+            });
+        }
+    }
 </script>
 {% endblock %}

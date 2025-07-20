@@ -649,6 +649,104 @@ def cleanup_old_sessions():
         logger.error(f"Error during cleanup: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/admin/keywords/populate', methods=['POST'])
+def populate_default_keywords():
+    """Populate database with default ML keywords"""
+    try:
+        # Check if keywords already exist
+        if AttachmentKeyword.query.count() > 0:
+            return jsonify({'message': 'Keywords already exist', 'count': AttachmentKeyword.query.count()})
+        
+        default_keywords = [
+            # Suspicious keywords
+            {'keyword': 'urgent', 'category': 'Suspicious', 'risk_score': 8},
+            {'keyword': 'confidential', 'category': 'Suspicious', 'risk_score': 7},
+            {'keyword': 'invoice', 'category': 'Suspicious', 'risk_score': 6},
+            {'keyword': 'payment', 'category': 'Suspicious', 'risk_score': 7},
+            {'keyword': 'wire transfer', 'category': 'Suspicious', 'risk_score': 9},
+            {'keyword': 'click here', 'category': 'Suspicious', 'risk_score': 8},
+            {'keyword': 'verify account', 'category': 'Suspicious', 'risk_score': 9},
+            {'keyword': 'suspended', 'category': 'Suspicious', 'risk_score': 8},
+            {'keyword': 'immediate action', 'category': 'Suspicious', 'risk_score': 9},
+            {'keyword': 'prize', 'category': 'Suspicious', 'risk_score': 7},
+            {'keyword': 'winner', 'category': 'Suspicious', 'risk_score': 7},
+            {'keyword': 'free money', 'category': 'Suspicious', 'risk_score': 9},
+            {'keyword': 'act now', 'category': 'Suspicious', 'risk_score': 8},
+            {'keyword': 'limited time', 'category': 'Suspicious', 'risk_score': 6},
+            {'keyword': 'social security', 'category': 'Suspicious', 'risk_score': 9},
+            {'keyword': 'tax refund', 'category': 'Suspicious', 'risk_score': 8},
+            {'keyword': 'suspended account', 'category': 'Suspicious', 'risk_score': 9},
+            {'keyword': 'security alert', 'category': 'Suspicious', 'risk_score': 8},
+            {'keyword': 'unusual activity', 'category': 'Suspicious', 'risk_score': 7},
+            {'keyword': 'bitcoin', 'category': 'Suspicious', 'risk_score': 7},
+            
+            # Business keywords
+            {'keyword': 'meeting', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'project', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'proposal', 'category': 'Business', 'risk_score': 3},
+            {'keyword': 'contract', 'category': 'Business', 'risk_score': 4},
+            {'keyword': 'agreement', 'category': 'Business', 'risk_score': 4},
+            {'keyword': 'report', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'quarterly', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'budget', 'category': 'Business', 'risk_score': 3},
+            {'keyword': 'forecast', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'presentation', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'conference', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'training', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'schedule', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'approval', 'category': 'Business', 'risk_score': 3},
+            {'keyword': 'review', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'deadline', 'category': 'Business', 'risk_score': 3},
+            {'keyword': 'milestone', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'deliverable', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'stakeholder', 'category': 'Business', 'risk_score': 2},
+            {'keyword': 'compliance', 'category': 'Business', 'risk_score': 3},
+            
+            # Personal keywords
+            {'keyword': 'birthday', 'category': 'Personal', 'risk_score': 1},
+            {'keyword': 'vacation', 'category': 'Personal', 'risk_score': 2},
+            {'keyword': 'holiday', 'category': 'Personal', 'risk_score': 2},
+            {'keyword': 'family', 'category': 'Personal', 'risk_score': 2},
+            {'keyword': 'wedding', 'category': 'Personal', 'risk_score': 2},
+            {'keyword': 'party', 'category': 'Personal', 'risk_score': 2},
+            {'keyword': 'lunch', 'category': 'Personal', 'risk_score': 1},
+            {'keyword': 'dinner', 'category': 'Personal', 'risk_score': 1},
+            {'keyword': 'weekend', 'category': 'Personal', 'risk_score': 1},
+            {'keyword': 'personal', 'category': 'Personal', 'risk_score': 3},
+            {'keyword': 'private', 'category': 'Personal', 'risk_score': 4},
+            {'keyword': 'home', 'category': 'Personal', 'risk_score': 2},
+            {'keyword': 'sick leave', 'category': 'Personal', 'risk_score': 2},
+            {'keyword': 'appointment', 'category': 'Personal', 'risk_score': 2},
+            {'keyword': 'doctor', 'category': 'Personal', 'risk_score': 3},
+            {'keyword': 'health', 'category': 'Personal', 'risk_score': 3},
+            {'keyword': 'emergency', 'category': 'Personal', 'risk_score': 5},
+            {'keyword': 'resignation', 'category': 'Personal', 'risk_score': 6},
+            {'keyword': 'quit', 'category': 'Personal', 'risk_score': 6},
+            {'keyword': 'leave company', 'category': 'Personal', 'risk_score': 7}
+        ]
+        
+        for keyword_data in default_keywords:
+            keyword = AttachmentKeyword(
+                keyword=keyword_data['keyword'],
+                category=keyword_data['category'],
+                risk_score=keyword_data['risk_score'],
+                is_active=True
+            )
+            db.session.add(keyword)
+        
+        db.session.commit()
+        
+        logger.info(f"Added {len(default_keywords)} default keywords to database")
+        return jsonify({
+            'status': 'success', 
+            'message': f'Added {len(default_keywords)} keywords',
+            'count': len(default_keywords)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error populating keywords: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('404.html'), 404
