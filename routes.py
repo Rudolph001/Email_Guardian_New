@@ -354,6 +354,31 @@ def api_case_details(session_id, record_id):
 
     return jsonify(case_data)
 
+@app.route('/api/ml-keywords')
+def api_ml_keywords():
+    """Get keywords used by ML engine"""
+    keywords = AttachmentKeyword.query.filter_by(is_active=True).all()
+    
+    keyword_data = []
+    for keyword in keywords:
+        keyword_data.append({
+            'keyword': keyword.keyword,
+            'category': keyword.category,
+            'risk_score': keyword.risk_score,
+            'description': keyword.description,
+            'is_active': keyword.is_active
+        })
+    
+    return jsonify({
+        'total_keywords': len(keyword_data),
+        'keywords': keyword_data,
+        'categories': {
+            'Business': len([k for k in keyword_data if k['category'] == 'Business']),
+            'Personal': len([k for k in keyword_data if k['category'] == 'Personal']),
+            'Suspicious': len([k for k in keyword_data if k['category'] == 'Suspicious'])
+        }
+    })
+
 @app.route('/api/exclusion-rules', methods=['GET', 'POST'])
 def api_exclusion_rules():
     """Get all exclusion rules or create new one"""

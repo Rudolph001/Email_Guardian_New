@@ -17,23 +17,23 @@ function initializeApplication() {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     }
-    
+
     // Initialize file upload
     initializeFileUpload();
-    
+
     // Initialize charts if Chart.js is available
     if (typeof Chart !== 'undefined') {
         initializeCharts();
     }
-    
+
     // Initialize DataTables if available
     if (typeof DataTable !== 'undefined') {
         initializeDataTables();
     }
-    
+
     // Set up event listeners
     setupEventListeners();
-    
+
     // Load session-specific content if on dashboard pages
     const sessionId = extractSessionIdFromUrl();
     if (sessionId) {
@@ -55,24 +55,24 @@ function setupEventListeners() {
             const recordId = e.target.dataset.recordId;
             showCaseDetails(currentSessionId, recordId);
         }
-        
+
         if (e.target.classList.contains('escalate-case-btn')) {
             const recordId = e.target.dataset.recordId;
             escalateCase(currentSessionId, recordId);
         }
-        
+
         if (e.target.classList.contains('update-case-status-btn')) {
             const recordId = e.target.dataset.recordId;
             const newStatus = e.target.dataset.newStatus;
             updateCaseStatus(currentSessionId, recordId, newStatus);
         }
-        
+
         if (e.target.classList.contains('generate-email-btn')) {
             const recordId = e.target.dataset.recordId;
             generateEscalationEmail(currentSessionId, recordId);
         }
     });
-    
+
     // Filter form submission
     const filterForm = document.getElementById('filterForm');
     if (filterForm) {
@@ -81,7 +81,7 @@ function setupEventListeners() {
             applyFilters();
         });
     }
-    
+
     // Search functionality
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
@@ -89,7 +89,7 @@ function setupEventListeners() {
             applyFilters();
         }, 500));
     }
-    
+
     // Auto-refresh for processing status
     if (document.querySelector('.processing-status.processing')) {
         setInterval(checkProcessingStatus, 5000);
@@ -99,36 +99,36 @@ function setupEventListeners() {
 function initializeFileUpload() {
     const fileUploadArea = document.getElementById('fileUploadArea');
     const fileInput = document.getElementById('fileInput');
-    
+
     if (!fileUploadArea || !fileInput) return;
-    
+
     // Click to upload
     fileUploadArea.addEventListener('click', function() {
         fileInput.click();
     });
-    
+
     // File selection
     fileInput.addEventListener('change', function() {
         if (this.files.length > 0) {
             displaySelectedFile(this.files[0]);
         }
     });
-    
+
     // Drag and drop
     fileUploadArea.addEventListener('dragover', function(e) {
         e.preventDefault();
         this.classList.add('dragover');
     });
-    
+
     fileUploadArea.addEventListener('dragleave', function(e) {
         e.preventDefault();
         this.classList.remove('dragover');
     });
-    
+
     fileUploadArea.addEventListener('drop', function(e) {
         e.preventDefault();
         this.classList.remove('dragover');
-        
+
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             fileInput.files = files;
@@ -140,7 +140,7 @@ function initializeFileUpload() {
 function displaySelectedFile(file) {
     const fileInfo = document.getElementById('fileInfo');
     const uploadBtn = document.getElementById('uploadBtn');
-    
+
     if (fileInfo && uploadBtn) {
         fileInfo.innerHTML = `
             <div class="alert alert-info">
@@ -162,32 +162,32 @@ function formatFileSize(bytes) {
 
 function loadSessionContent() {
     if (!currentSessionId) return;
-    
+
     // Load ML insights for dashboard
     if (document.getElementById('mlInsightsChart')) {
         loadMLInsights(currentSessionId);
     }
-    
+
     // Load BAU analysis
     if (document.getElementById('bauAnalysisChart')) {
         loadBAUAnalysis(currentSessionId);
     }
-    
+
     // Load attachment analytics
     if (document.getElementById('attachmentRiskChart')) {
         loadAttachmentRiskAnalytics(currentSessionId);
     }
-    
+
     // Load sender analysis
     if (document.getElementById('senderBehaviorChart')) {
         loadSenderAnalysis(currentSessionId);
     }
-    
+
     // Load time analysis
     if (document.getElementById('timePatternChart')) {
         loadTimeAnalysis(currentSessionId);
     }
-    
+
     // Load whitelist analysis
     if (document.getElementById('whitelistRecommendationsChart')) {
         loadWhitelistAnalysis(currentSessionId);
@@ -199,13 +199,13 @@ async function loadMLInsights(sessionId) {
     try {
         showLoading('Loading ML insights...');
         const response = await fetch(`/api/ml_insights/${sessionId}`);
-        
+
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.error) {
             console.warn('ML insights error:', data.error);
             // Still update display with default/available data
@@ -213,12 +213,12 @@ async function loadMLInsights(sessionId) {
         } else {
             updateMLInsightsDisplay(data);
         }
-        
+
         hideLoading();
     } catch (error) {
         console.error('Error loading ML insights:', error);
         showError('Failed to load ML insights: ' + error.message);
-        
+
         // Provide fallback data
         updateMLInsightsDisplay({
             total_records: 0,
@@ -228,7 +228,7 @@ async function loadMLInsights(sessionId) {
             processing_complete: false,
             error: 'Failed to load data'
         });
-        
+
         hideLoading();
     }
 }
@@ -237,12 +237,12 @@ async function loadBAUAnalysis(sessionId) {
     try {
         const response = await fetch(`/api/bau_analysis/${sessionId}`);
         const data = await response.json();
-        
+
         if (data.error) {
             console.error('BAU analysis error:', data.error);
             return;
         }
-        
+
         updateBAUAnalysisDisplay(data);
     } catch (error) {
         console.error('Error loading BAU analysis:', error);
@@ -253,12 +253,12 @@ async function loadAttachmentRiskAnalytics(sessionId) {
     try {
         const response = await fetch(`/api/attachment_risk_analytics/${sessionId}`);
         const data = await response.json();
-        
+
         if (data.error) {
             console.error('Attachment risk analytics error:', data.error);
             return;
         }
-        
+
         updateAttachmentRiskDisplay(data);
     } catch (error) {
         console.error('Error loading attachment risk analytics:', error);
@@ -270,12 +270,12 @@ async function showCaseDetails(sessionId, recordId) {
         showLoading('Loading case details...');
         const response = await fetch(`/api/case/${sessionId}/${recordId}`);
         const data = await response.json();
-        
+
         if (data.error) {
             showError('Failed to load case details: ' + data.error);
             return;
         }
-        
+
         displayCaseDetailsModal(data);
         hideLoading();
     } catch (error) {
@@ -297,21 +297,21 @@ async function updateCaseStatus(sessionId, recordId, newStatus) {
                 notes: `Status changed to ${newStatus} by user`
             })
         });
-        
+
         const result = await response.json();
-        
+
         if (result.error) {
             showError('Failed to update case status: ' + result.error);
             return;
         }
-        
+
         showSuccess(`Case status updated to ${newStatus}`);
-        
+
         // Refresh the page or update the UI
         setTimeout(() => {
             location.reload();
         }, 1500);
-        
+
     } catch (error) {
         console.error('Error updating case status:', error);
         showError('Failed to update case status');
@@ -321,7 +321,7 @@ async function updateCaseStatus(sessionId, recordId, newStatus) {
 async function escalateCase(sessionId, recordId) {
     try {
         const result = await updateCaseStatus(sessionId, recordId, 'Escalated');
-        
+
         if (result !== false) {
             // Show escalation options modal
             showEscalationModal(sessionId, recordId);
@@ -337,12 +337,12 @@ async function generateEscalationEmail(sessionId, recordId) {
         showLoading('Generating email...');
         const response = await fetch(`/api/escalation/${sessionId}/${recordId}/generate-email`);
         const data = await response.json();
-        
+
         if (data.error) {
             showError('Failed to generate email: ' + data.error);
             return;
         }
-        
+
         displayEmailDraftModal(data);
         hideLoading();
     } catch (error) {
@@ -362,23 +362,23 @@ async function sendEscalationEmail(sessionId, recordId, emailData) {
             },
             body: JSON.stringify(emailData)
         });
-        
+
         const result = await response.json();
-        
+
         if (result.error) {
             showError('Failed to send email: ' + result.error);
             return;
         }
-        
+
         showSuccess('Email sent successfully');
         hideLoading();
-        
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('emailDraftModal'));
         if (modal) {
             modal.hide();
         }
-        
+
     } catch (error) {
         console.error('Error sending email:', error);
         showError('Failed to send email');
@@ -427,15 +427,15 @@ function updateMLInsightsDisplay(data) {
     const totalRecords = document.getElementById('totalRecords');
     const analyzedRecords = document.getElementById('analyzedRecords');
     const avgRiskScore = document.getElementById('avgRiskScore');
-    
+
     if (totalRecords) totalRecords.textContent = data.total_records || 0;
     if (analyzedRecords) analyzedRecords.textContent = data.analyzed_records || 0;
     if (avgRiskScore) avgRiskScore.textContent = (data.average_risk_score || 0).toFixed(3);
-    
+
     // Update risk distribution chart with safe fallbacks
     const riskDistribution = data.risk_distribution || {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0};
     const chartElement = document.getElementById('mlInsightsChart');
-    
+
     if (chartElement) {
         try {
             createRiskDistributionChart(riskDistribution);
@@ -443,7 +443,7 @@ function updateMLInsightsDisplay(data) {
             console.error('Error creating risk distribution chart:', error);
         }
     }
-    
+
     // Show error message if present
     if (data.error) {
         console.warn('ML Insights warning:', data.error);
@@ -452,14 +452,14 @@ function updateMLInsightsDisplay(data) {
 
 function updateBAUAnalysisDisplay(data) {
     if (!data || data.error) return;
-    
+
     // Update BAU statistics
     const bauScore = document.getElementById('bauScore');
     const highVolumeComms = document.getElementById('highVolumeComms');
-    
+
     if (bauScore) bauScore.textContent = (data.bau_statistics?.bau_score || 0).toFixed(1);
     if (highVolumeComms) highVolumeComms.textContent = data.high_volume_pairs ? Object.keys(data.high_volume_pairs).length : 0;
-    
+
     // Create charts if elements exist
     if (document.getElementById('bauAnalysisChart')) {
         createBAUChart(data);
@@ -468,14 +468,14 @@ function updateBAUAnalysisDisplay(data) {
 
 function updateAttachmentRiskDisplay(data) {
     if (!data || data.error) return;
-    
+
     // Update attachment statistics
     const totalAttachments = document.getElementById('totalAttachments');
     const highRiskAttachments = document.getElementById('highRiskAttachments');
-    
+
     if (totalAttachments) totalAttachments.textContent = data.total_attachments || 0;
     if (highRiskAttachments) highRiskAttachments.textContent = data.risk_distribution?.high_risk_count || 0;
-    
+
     // Create attachment risk chart
     if (document.getElementById('attachmentRiskChart')) {
         createAttachmentRiskChart(data);
@@ -484,13 +484,13 @@ function updateAttachmentRiskDisplay(data) {
 
 function updateSenderAnalysisDisplay(data) {
     if (!data || data.error) return;
-    
+
     const totalSenders = document.getElementById('totalSenders');
     const highRiskSenders = document.getElementById('highRiskSenders');
-    
+
     if (totalSenders) totalSenders.textContent = data.total_senders || 0;
     if (highRiskSenders) highRiskSenders.textContent = data.summary_statistics?.high_risk_senders || 0;
-    
+
     if (document.getElementById('senderBehaviorChart')) {
         createSenderBehaviorChart(data);
     }
@@ -498,13 +498,13 @@ function updateSenderAnalysisDisplay(data) {
 
 function updateTimeAnalysisDisplay(data) {
     if (!data || data.error) return;
-    
+
     const businessHoursRatio = document.getElementById('businessHoursRatio');
     const afterHoursActivity = document.getElementById('afterHoursActivity');
-    
+
     if (businessHoursRatio) businessHoursRatio.textContent = ((data.business_hours_ratio || 0) * 100).toFixed(1) + '%';
     if (afterHoursActivity) afterHoursActivity.textContent = data.after_hours_activity || 0;
-    
+
     if (document.getElementById('timePatternChart')) {
         createTimePatternChart(data);
     }
@@ -512,13 +512,13 @@ function updateTimeAnalysisDisplay(data) {
 
 function updateWhitelistAnalysisDisplay(data) {
     if (!data || data.error) return;
-    
+
     const recommendedDomains = document.getElementById('recommendedDomains');
     const whitelistCoverage = document.getElementById('whitelistCoverage');
-    
+
     if (recommendedDomains) recommendedDomains.textContent = data.whitelist_recommendations?.length || 0;
     if (whitelistCoverage) whitelistCoverage.textContent = data.whitelist_effectiveness?.whitelist_ratio || 0;
-    
+
     if (document.getElementById('whitelistRecommendationsChart')) {
         createWhitelistChart(data);
     }
@@ -584,16 +584,16 @@ function displayCaseDetailsModal(caseData) {
             </div>
         </div>
     `;
-    
+
     // Remove existing modal
     const existingModal = document.getElementById('caseDetailsModal');
     if (existingModal) {
         existingModal.remove();
     }
-    
+
     // Add new modal to body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
+
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('caseDetailsModal'));
     modal.show();
@@ -651,16 +651,16 @@ function displayEmailDraftModal(emailData) {
             </div>
         </div>
     `;
-    
+
     // Remove existing modal
     const existingModal = document.getElementById('emailDraftModal');
     if (existingModal) {
         existingModal.remove();
     }
-    
+
     // Add new modal to body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
+
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('emailDraftModal'));
     modal.show();
@@ -686,7 +686,7 @@ function sendEmailFromForm() {
 function createRiskDistributionChart(riskData) {
     const ctx = document.getElementById('mlInsightsChart');
     if (!ctx) return;
-    
+
     new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -727,9 +727,9 @@ function createRiskDistributionChart(riskData) {
 function createBAUChart(data) {
     const ctx = document.getElementById('bauAnalysisChart');
     if (!ctx || !data.frequency_analysis) return;
-    
+
     const topSenders = data.frequency_analysis.top_senders || {};
-    
+
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -763,7 +763,7 @@ function createBAUChart(data) {
 function createAttachmentRiskChart(data) {
     const ctx = document.getElementById('attachmentRiskChart');
     if (!ctx || !data.risk_categories) return;
-    
+
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -791,9 +791,9 @@ function createAttachmentRiskChart(data) {
 function createSenderBehaviorChart(data) {
     const ctx = document.getElementById('senderBehaviorChart');
     if (!ctx || !data.sender_profiles) return;
-    
+
     const topSenders = Object.entries(data.sender_profiles).slice(0, 10);
-    
+
     new Chart(ctx, {
         type: 'scatter',
         data: {
@@ -845,10 +845,10 @@ function createSenderBehaviorChart(data) {
 function createTimePatternChart(data) {
     const ctx = document.getElementById('timePatternChart');
     if (!ctx || !data.hourly_distribution) return;
-    
+
     const hours = Array.from({length: 24}, (_, i) => i);
     const hourlyData = hours.map(hour => data.hourly_distribution[hour] || 0);
-    
+
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -883,9 +883,9 @@ function createTimePatternChart(data) {
 function createWhitelistChart(data) {
     const ctx = document.getElementById('whitelistRecommendationsChart');
     if (!ctx || !data.whitelist_recommendations) return;
-    
+
     const topRecommendations = data.whitelist_recommendations.slice(0, 10);
-    
+
     new Chart(ctx, {
         type: 'horizontalBar',
         data: {
@@ -918,7 +918,7 @@ function showLoading(message = 'Loading...') {
     if (loadingOverlay) {
         hideLoading();
     }
-    
+
     loadingOverlay = document.createElement('div');
     loadingOverlay.className = 'loading-overlay';
     loadingOverlay.innerHTML = `
@@ -929,7 +929,7 @@ function showLoading(message = 'Loading...') {
             <div class="ms-3">${message}</div>
         </div>
     `;
-    
+
     // Add overlay styles
     Object.assign(loadingOverlay.style, {
         position: 'fixed',
@@ -944,7 +944,7 @@ function showLoading(message = 'Loading...') {
         zIndex: '9999',
         color: 'white'
     });
-    
+
     document.body.appendChild(loadingOverlay);
 }
 
@@ -970,9 +970,9 @@ function showAlert(message, type = 'info') {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', alertHtml);
-    
+
     // Auto-remove after 5 seconds
     setTimeout(() => {
         const alerts = document.querySelectorAll('.alert');
@@ -997,16 +997,16 @@ function debounce(func, wait) {
 function applyFilters() {
     const filterForm = document.getElementById('filterForm');
     if (!filterForm) return;
-    
+
     const formData = new FormData(filterForm);
     const params = new URLSearchParams();
-    
+
     for (const [key, value] of formData.entries()) {
         if (value) {
             params.append(key, value);
         }
     }
-    
+
     // Update URL and reload page with filters
     const currentUrl = new URL(window.location);
     currentUrl.search = params.toString();
@@ -1015,7 +1015,7 @@ function applyFilters() {
 
 function checkProcessingStatus() {
     if (!currentSessionId) return;
-    
+
     fetch(`/api/processing_status/${currentSessionId}`)
         .then(response => response.json())
         .then(data => {
@@ -1033,7 +1033,7 @@ function initializeCharts() {
     Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
     Chart.defaults.font.size = 12;
     Chart.defaults.color = '#495057';
-    
+
     // Load charts based on current page
     setTimeout(() => {
         loadSessionContent();
@@ -1058,6 +1058,51 @@ function initializeDataTables() {
             }
         });
     }
+}
+
+function loadAdvancedAnalytics() {
+    console.log('Loading advanced analytics...');
+}
+
+function loadMLKeywords() {
+    fetch('/api/ml-keywords')
+        .then(response => response.json())
+        .then(data => {
+            const keywordsDiv = document.getElementById('mlKeywords');
+
+            let html = `
+                <div class="alert alert-info">
+                    <small><strong>Total Keywords:</strong> ${data.total_keywords}</small><br>
+                    <small><strong>Business:</strong> ${data.categories.Business} | 
+                    <strong>Personal:</strong> ${data.categories.Personal} | 
+                    <strong>Suspicious:</strong> ${data.categories.Suspicious}</small>
+                </div>
+                <div class="row">
+            `;
+
+            data.keywords.forEach(keyword => {
+                const badgeClass = keyword.category === 'Business' ? 'success' : 
+                                 keyword.category === 'Personal' ? 'warning' : 'danger';
+
+                html += `
+                    <div class="col-6 mb-1">
+                        <small class="d-flex justify-content-between">
+                            <span>${keyword.keyword}</span>
+                            <span class="badge bg-${badgeClass}">${keyword.risk_score}</span>
+                        </small>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            keywordsDiv.innerHTML = html;
+            keywordsDiv.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error loading ML keywords:', error);
+            document.getElementById('mlKeywords').innerHTML = 
+                '<div class="alert alert-danger">Error loading keywords</div>';
+        });
 }
 
 // Expose functions globally for inline event handlers
