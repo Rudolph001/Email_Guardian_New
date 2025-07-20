@@ -5,6 +5,7 @@ from session_manager import SessionManager
 from data_processor import DataProcessor
 from ml_engine import MLEngine
 from advanced_ml_engine import AdvancedMLEngine
+from performance_config import config
 from rule_engine import RuleEngine
 from domain_manager import DomainManager
 import uuid
@@ -435,12 +436,58 @@ def admin():
     whitelist_domains = WhitelistDomain.query.filter_by(is_active=True).all()
     attachment_keywords = AttachmentKeyword.query.filter_by(is_active=True).all()
 
+    # Risk scoring algorithm details for transparency
+    risk_scoring_info = {
+        'thresholds': {
+            'critical': 0.8,
+            'high': 0.6,
+            'medium': 0.4,
+            'low': 0.0
+        },
+        'algorithm_components': {
+            'anomaly_detection': {
+                'weight': 40,
+                'description': 'Isolation Forest algorithm detects unusual patterns',
+                'method': 'sklearn.ensemble.IsolationForest',
+                'contamination_rate': '10%',
+                'estimators': config.ml_estimators
+            },
+            'rule_based_factors': {
+                'weight': 60,
+                'factors': [
+                    {'name': 'Leaver Status', 'max_score': 0.3, 'description': 'Employee leaving organization'},
+                    {'name': 'External Domain', 'max_score': 0.2, 'description': 'Public email domains (Gmail, Yahoo, etc.)'},
+                    {'name': 'Attachment Risk', 'max_score': 0.3, 'description': 'File type and suspicious patterns'},
+                    {'name': 'Wordlist Matches', 'max_score': 0.2, 'description': 'Suspicious keywords in subject/attachment'},
+                    {'name': 'Time-based Risk', 'max_score': 0.1, 'description': 'Weekend/after-hours activity'},
+                    {'name': 'Justification Analysis', 'max_score': 0.1, 'description': 'Suspicious terms in explanations'}
+                ]
+            }
+        },
+        'attachment_scoring': {
+            'high_risk_extensions': ['.exe', '.scr', '.bat', '.cmd', '.com', '.pif', '.vbs', '.js'],
+            'high_risk_score': 0.8,
+            'medium_risk_extensions': ['.zip', '.rar', '.7z', '.doc', '.docx', '.xls', '.xlsx', '.pdf'],
+            'medium_risk_score': 0.3,
+            'suspicious_patterns': ['double extension', 'hidden', 'confidential', 'urgent', 'invoice'],
+            'pattern_score': 0.2
+        },
+        'performance_config': {
+            'fast_mode': config.fast_mode,
+            'max_ml_records': config.max_ml_records,
+            'ml_estimators': config.ml_estimators,
+            'tfidf_max_features': config.tfidf_max_features,
+            'chunk_size': config.chunk_size
+        }
+    }
+
     return render_template('admin.html',
                          stats=stats,
                          recent_sessions=recent_sessions,
                          sessions=sessions,
                          whitelist_domains=whitelist_domains,
-                         attachment_keywords=attachment_keywords)
+                         attachment_keywords=attachment_keywords,
+                         risk_scoring_info=risk_scoring_info)
 
 @app.route('/whitelist-domains')
 def whitelist_domains():
