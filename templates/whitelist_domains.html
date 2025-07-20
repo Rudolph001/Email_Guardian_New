@@ -10,9 +10,14 @@
                     <h2><i class="fas fa-shield-alt"></i> Whitelist Domains</h2>
                     <p class="text-muted">Manage trusted domains that bypass security filtering</p>
                 </div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDomainModal">
-                    <i class="fas fa-plus"></i> Add Domain
-                </button>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDomainModal">
+                        <i class="fas fa-plus"></i> Add Domain
+                    </button>
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#bulkAddModal">
+                        <i class="fas fa-list"></i> Bulk Add
+                    </button>
+                </div>
             </div>
 
             <!-- Statistics Cards -->
@@ -129,6 +134,7 @@
                     <div class="mb-3">
                         <label for="domainInput" class="form-label">Domain Name</label>
                         <input type="text" class="form-control" id="domainInput" placeholder="example.com" required>
+                        <div class="form-text">Enter a single domain name</div>
                     </div>
                     <div class="mb-3">
                         <label for="domainTypeSelect" class="form-label">Domain Type</label>
@@ -152,6 +158,78 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="addDomain()">Add Domain</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Add Domains Modal -->
+<div class="modal fade" id="bulkAddModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Add Whitelist Domains</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bulkAddForm">
+                    <div class="mb-3">
+                        <label for="bulkDomainsInput" class="form-label">Domain Names</label>
+                        <textarea class="form-control" id="bulkDomainsInput" rows="8" 
+                                  placeholder="Enter multiple domains, one per line:&#10;example.com&#10;company.org&#10;trusted-partner.net&#10;subsidiary.co.uk" required></textarea>
+                        <div class="form-text">Enter one domain per line. Empty lines and spaces will be ignored.</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bulkDomainTypeSelect" class="form-label">Domain Type (applies to all)</label>
+                                <select class="form-select" id="bulkDomainTypeSelect">
+                                    <option value="Corporate">Corporate</option>
+                                    <option value="Personal">Personal</option>
+                                    <option value="Public">Public</option>
+                                    <option value="Partner">Partner</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bulkAddedByInput" class="form-label">Added By</label>
+                                <input type="text" class="form-control" id="bulkAddedByInput" value="Admin">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bulkNotesInput" class="form-label">Notes (applies to all)</label>
+                        <textarea class="form-control" id="bulkNotesInput" rows="2" placeholder="Optional notes that will be applied to all domains"></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Bulk Add Info:</strong> Domains that already exist will be skipped. Invalid domains will be reported.
+                    </div>
+                </form>
+                
+                <!-- Progress section for bulk add -->
+                <div id="bulkProgressSection" class="d-none">
+                    <div class="mb-3">
+                        <label class="form-label">Progress</label>
+                        <div class="progress">
+                            <div class="progress-bar" id="bulkProgressBar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div class="mt-2">
+                            <small id="bulkProgressText" class="text-muted">Starting...</small>
+                        </div>
+                    </div>
+                    <div id="bulkResults" class="mt-3"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="bulkAddBtn" onclick="bulkAddDomains()">
+                    <i class="fas fa-upload"></i> Add All Domains
+                </button>
+                <button type="button" class="btn btn-success d-none" id="bulkCompleteBtn" data-bs-dismiss="modal">
+                    <i class="fas fa-check"></i> Complete
+                </button>
             </div>
         </div>
     </div>
@@ -335,6 +413,141 @@ async function deleteDomain(domainId, domainName) {
         showAlert('danger', 'Failed to delete domain: ' + error.message);
     }
 }
+
+async function bulkAddDomains() {
+    const domainsText = document.getElementById('bulkDomainsInput').value.trim();
+    const domainType = document.getElementById('bulkDomainTypeSelect').value;
+    const addedBy = document.getElementById('bulkAddedByInput').value.trim();
+    const notes = document.getElementById('bulkNotesInput').value.trim();
+    
+    if (!domainsText) {
+        alert('Please enter at least one domain');
+        return;
+    }
+    
+    // Parse domains from textarea
+    const domains = domainsText.split('\n')
+        .map(d => d.trim().toLowerCase())
+        .filter(d => d.length > 0);
+    
+    if (domains.length === 0) {
+        alert('Please enter valid domain names');
+        return;
+    }
+    
+    // Show progress section
+    document.getElementById('bulkProgressSection').classList.remove('d-none');
+    document.getElementById('bulkAddBtn').classList.add('d-none');
+    
+    const progressBar = document.getElementById('bulkProgressBar');
+    const progressText = document.getElementById('bulkProgressText');
+    const resultsDiv = document.getElementById('bulkResults');
+    
+    // Initialize results tracking
+    let successful = 0;
+    let failed = 0;
+    let skipped = 0;
+    const errors = [];
+    
+    progressText.textContent = `Processing ${domains.length} domains...`;
+    resultsDiv.innerHTML = '';
+    
+    for (let i = 0; i < domains.length; i++) {
+        const domain = domains[i];
+        const progress = ((i + 1) / domains.length) * 100;
+        
+        progressBar.style.width = progress + '%';
+        progressText.textContent = `Processing ${i + 1} of ${domains.length}: ${domain}`;
+        
+        try {
+            const response = await fetch('/api/whitelist-domains', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    domain: domain,
+                    domain_type: domainType,
+                    added_by: addedBy,
+                    notes: notes
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                successful++;
+            } else {
+                if (result.message.includes('already exists')) {
+                    skipped++;
+                } else {
+                    failed++;
+                    errors.push(`${domain}: ${result.message}`);
+                }
+            }
+            
+        } catch (error) {
+            failed++;
+            errors.push(`${domain}: Network error - ${error.message}`);
+        }
+        
+        // Small delay to show progress
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // Show final results
+    progressBar.classList.add('bg-success');
+    progressText.textContent = 'Bulk add completed!';
+    
+    let resultsHTML = '<div class="card"><div class="card-body">';
+    resultsHTML += '<h6 class="card-title">Bulk Add Results</h6>';
+    
+    if (successful > 0) {
+        resultsHTML += `<div class="text-success mb-2"><i class="fas fa-check-circle"></i> Successfully added: ${successful} domains</div>`;
+    }
+    
+    if (skipped > 0) {
+        resultsHTML += `<div class="text-warning mb-2"><i class="fas fa-exclamation-triangle"></i> Skipped (already exist): ${skipped} domains</div>`;
+    }
+    
+    if (failed > 0) {
+        resultsHTML += `<div class="text-danger mb-2"><i class="fas fa-times-circle"></i> Failed: ${failed} domains</div>`;
+        
+        if (errors.length > 0) {
+            resultsHTML += '<div class="mt-2"><strong>Errors:</strong><ul class="list-unstyled mt-1">';
+            errors.forEach(error => {
+                resultsHTML += `<li class="text-danger small">• ${error}</li>`;
+            });
+            resultsHTML += '</ul></div>';
+        }
+    }
+    
+    resultsHTML += '</div></div>';
+    resultsDiv.innerHTML = resultsHTML;
+    
+    // Show complete button and hide progress bar after a moment
+    setTimeout(() => {
+        document.getElementById('bulkCompleteBtn').classList.remove('d-none');
+        
+        // Refresh the domains table
+        loadWhitelistDomains();
+        
+        // Show success alert
+        if (successful > 0) {
+            showAlert('success', `Successfully added ${successful} domains to whitelist${skipped > 0 ? ` (${skipped} duplicates skipped)` : ''}`);
+        }
+    }, 1000);
+}
+
+// Reset bulk add modal when it's closed
+document.getElementById('bulkAddModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('bulkAddForm').reset();
+    document.getElementById('bulkProgressSection').classList.add('d-none');
+    document.getElementById('bulkAddBtn').classList.remove('d-none');
+    document.getElementById('bulkCompleteBtn').classList.add('d-none');
+    document.getElementById('bulkProgressBar').style.width = '0%';
+    document.getElementById('bulkProgressBar').classList.remove('bg-success');
+});
 
 function showAlert(type, message) {
     const alertHtml = `
