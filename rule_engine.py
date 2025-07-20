@@ -2,8 +2,8 @@ import json
 import re
 import logging
 from datetime import datetime
-from local_models import Rule, EmailRecord
-from local_app import db
+from models import Rule, EmailRecord
+from app import db
 
 logger = logging.getLogger(__name__)
 

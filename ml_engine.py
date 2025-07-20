@@ -7,8 +7,8 @@ from sklearn.ensemble import IsolationForest
 from sklearn.cluster import DBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import StandardScaler
-from local_models import EmailRecord, AttachmentKeyword
-from local_app import db
+from models import EmailRecord, AttachmentKeyword
+from app import db
 
 logger = logging.getLogger(__name__)
 

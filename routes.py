@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file
-from local_app import app, db
-from local_models import ProcessingSession, EmailRecord, Rule, WhitelistDomain, AttachmentKeyword, ProcessingError
+from app import app, db
+from models import ProcessingSession, EmailRecord, Rule, WhitelistDomain, AttachmentKeyword, ProcessingError
 from session_manager import SessionManager
 from data_processor import DataProcessor
 from ml_engine import MLEngine

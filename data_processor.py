@@ -3,12 +3,12 @@ import csv
 import json
 import logging
 from datetime import datetime
-from local_models import ProcessingSession, EmailRecord, ProcessingError
+from models import ProcessingSession, EmailRecord, ProcessingError
 from session_manager import SessionManager
 from rule_engine import RuleEngine
 from domain_manager import DomainManager
 from ml_engine import MLEngine
-from local_app import db
+from app import db
 
 logger = logging.getLogger(__name__)
 
