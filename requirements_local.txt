@@ -1,9 +1,13 @@
-# Email Guardian - Local Installation Requirements
-Flask>=3.0.0
-Flask-SQLAlchemy>=3.1.0
-pandas>=2.0.0
-numpy>=1.24.0
-scikit-learn>=1.3.0
-networkx>=3.0.0
-email-validator>=2.0.0
-waitress>=2.1.0
+flask==3.0.0
+flask-sqlalchemy==3.1.1
+werkzeug==3.0.1
+pandas==2.1.4
+numpy==1.26.2
+scikit-learn==1.3.2
+networkx==3.2.1
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23
+email-validator==2.1.0.post1
+
+# Optional: Better server for Windows
+waitress==3.0.0
