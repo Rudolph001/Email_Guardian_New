@@ -231,12 +231,49 @@ def dashboard(session_id):
         logger.warning(f"Could not get attachment analytics: {str(e)}")
         attachment_analytics = {}
 
+    # Get workflow statistics for the dashboard
+    workflow_stats = {}
+    try:
+        # Count excluded records
+        excluded_count = EmailRecord.query.filter(
+            EmailRecord.session_id == session_id,
+            EmailRecord.excluded_by_rule.isnot(None)
+        ).count()
+        
+        # Count whitelisted records  
+        whitelisted_count = EmailRecord.query.filter_by(
+            session_id=session_id,
+            whitelisted=True
+        ).count()
+        
+        # Count records with rule matches
+        rules_matched_count = EmailRecord.query.filter(
+            EmailRecord.session_id == session_id,
+            EmailRecord.rule_matches.isnot(None)
+        ).count()
+        
+        # Count critical cases
+        critical_cases_count = EmailRecord.query.filter_by(
+            session_id=session_id,
+            risk_level='Critical'
+        ).count()
+        
+        workflow_stats = {
+            'excluded_count': excluded_count,
+            'whitelisted_count': whitelisted_count,
+            'rules_matched_count': rules_matched_count,
+            'critical_cases_count': critical_cases_count
+        }
+    except Exception as e:
+        logger.warning(f"Could not get workflow stats for dashboard: {str(e)}")
+
     return render_template('dashboard.html', 
                          session=session, 
                          stats=stats,
                          ml_insights=ml_insights,
                          bau_analysis=bau_analysis,
-                         attachment_analytics=attachment_analytics)
+                         attachment_analytics=attachment_analytics,
+                         workflow_stats=workflow_stats)
 
 @app.route('/cases/<session_id>')
 def cases(session_id):

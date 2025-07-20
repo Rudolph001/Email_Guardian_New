@@ -177,7 +177,7 @@
         </div>
     </div>
     
-    <!-- Processing Workflow Status -->
+    <!-- Processing Workflow Statistics -->
     <div class="col-lg-6 mb-4 fade-in-delay-1">
         <div class="card h-100 interactive-card">
             <div class="card-header">
@@ -185,73 +185,122 @@
                     <i class="fas fa-cogs text-primary"></i>
                     Processing Workflow
                 </h5>
+                <p class="text-muted small mb-0">Email counts for each processing stage</p>
             </div>
             <div class="card-body">
-                <div class="workflow-status">
-                    <div class="workflow-step-status d-flex align-items-center mb-3">
-                        <div class="step-icon me-3">
-                            {% if stats.workflow_stages.exclusion_applied %}
-                                <i class="fas fa-check-circle text-success fa-2x"></i>
-                            {% else %}
-                                <i class="fas fa-clock text-warning fa-2x"></i>
-                            {% endif %}
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-1">Exclusion Rules</h6>
-                            <p class="text-muted mb-0">Filter records based on exclusion criteria</p>
-                            <div class="animated-progress mt-2">
-                                <div class="progress-bar" style="width: {% if stats.workflow_stages.exclusion_applied %}100{% else %}25{% endif %}%"></div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="workflow-stat-card p-3 border rounded">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="workflow-icon text-secondary mb-2">
+                                        <i class="fas fa-filter"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-1">Exclusion Rules</h6>
+                                    <p class="text-muted small mb-2">Filter records based on exclusion criteria</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="workflow-count">
+                                    <h4 class="text-secondary mb-0 animated-number" id="excluded-count-dashboard" data-target="{{ workflow_stats.excluded_count or 0 }}">
+                                        {{ workflow_stats.excluded_count or 0 }}
+                                    </h4>
+                                    <small class="text-muted">Emails Excluded</small>
+                                </div>
+                                <div class="status-indicator">
+                                    {% if (workflow_stats.excluded_count or 0) > 0 %}
+                                        <i class="fas fa-check-circle text-success"></i>
+                                    {% else %}
+                                        <i class="fas fa-minus-circle text-muted"></i>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="workflow-step-status d-flex align-items-center mb-3">
-                        <div class="step-icon me-3">
-                            {% if stats.workflow_stages.whitelist_applied %}
-                                <i class="fas fa-check-circle text-success fa-2x"></i>
-                            {% else %}
-                                <i class="fas fa-clock text-warning fa-2x"></i>
-                            {% endif %}
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-1">Whitelist Filtering</h6>
-                            <p class="text-muted mb-0">Remove trusted domain communications</p>
-                            <div class="animated-progress mt-2">
-                                <div class="progress-bar" style="width: {% if stats.workflow_stages.whitelist_applied %}100{% else %}50{% endif %}%"></div>
+                    <div class="col-6">
+                        <div class="workflow-stat-card p-3 border rounded">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="workflow-icon text-success mb-2">
+                                        <i class="fas fa-shield-check"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-1">Whitelist Filtering</h6>
+                                    <p class="text-muted small mb-2">Remove trusted domain communications</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="workflow-count">
+                                    <h4 class="text-success mb-0 animated-number" id="whitelisted-count-dashboard" data-target="{{ workflow_stats.whitelisted_count or 0 }}">
+                                        {{ workflow_stats.whitelisted_count or 0 }}
+                                    </h4>
+                                    <small class="text-muted">Emails Whitelisted</small>
+                                </div>
+                                <div class="status-indicator">
+                                    {% if (workflow_stats.whitelisted_count or 0) > 0 %}
+                                        <i class="fas fa-check-circle text-success"></i>
+                                    {% else %}
+                                        <i class="fas fa-minus-circle text-muted"></i>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="workflow-step-status d-flex align-items-center mb-3">
-                        <div class="step-icon me-3">
-                            {% if stats.workflow_stages.rules_applied %}
-                                <i class="fas fa-check-circle text-success fa-2x"></i>
-                            {% else %}
-                                <i class="fas fa-clock text-warning fa-2x"></i>
-                            {% endif %}
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-1">Security Rules</h6>
-                            <p class="text-muted mb-0">Apply security rules and threat detection</p>
-                            <div class="animated-progress mt-2">
-                                <div class="progress-bar" style="width: {% if stats.workflow_stages.rules_applied %}100{% else %}75{% endif %}%"></div>
+                    <div class="col-6">
+                        <div class="workflow-stat-card p-3 border rounded">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="workflow-icon text-warning mb-2">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-1">Security Rules</h6>
+                                    <p class="text-muted small mb-2">Apply security rules and threat detection</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="workflow-count">
+                                    <h4 class="text-warning mb-0 animated-number" id="rules-matched-count-dashboard" data-target="{{ workflow_stats.rules_matched_count or 0 }}">
+                                        {{ workflow_stats.rules_matched_count or 0 }}
+                                    </h4>
+                                    <small class="text-muted">Rule Matches</small>
+                                </div>
+                                <div class="status-indicator">
+                                    {% if (workflow_stats.rules_matched_count or 0) > 0 %}
+                                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                                    {% else %}
+                                        <i class="fas fa-check-circle text-success"></i>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="workflow-step-status d-flex align-items-center">
-                        <div class="step-icon me-3">
-                            {% if stats.workflow_stages.ml_applied %}
-                                <i class="fas fa-check-circle text-success fa-2x"></i>
-                            {% else %}
-                                <i class="fas fa-clock text-warning fa-2x"></i>
-                            {% endif %}
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-1">ML Analysis</h6>
-                            <p class="text-muted mb-0">Machine learning anomaly detection</p>
-                            <div class="animated-progress mt-2">
-                                <div class="progress-bar" style="width: {% if stats.workflow_stages.ml_applied %}100{% else %}90{% endif %}%"></div>
+                    <div class="col-6">
+                        <div class="workflow-stat-card p-3 border rounded">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="workflow-icon text-danger mb-2">
+                                        <i class="fas fa-brain"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-1">ML Analysis</h6>
+                                    <p class="text-muted small mb-2">Machine learning anomaly detection</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="workflow-count">
+                                    <h4 class="text-danger mb-0 animated-number" id="critical-cases-count-dashboard" data-target="{{ workflow_stats.critical_cases_count or 0 }}">
+                                        {{ workflow_stats.critical_cases_count or 0 }}
+                                    </h4>
+                                    <small class="text-muted">Critical Cases</small>
+                                </div>
+                                <div class="status-indicator">
+                                    {% if (workflow_stats.critical_cases_count or 0) > 0 %}
+                                        <i class="fas fa-exclamation-circle text-danger"></i>
+                                    {% else %}
+                                        <i class="fas fa-check-circle text-success"></i>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
