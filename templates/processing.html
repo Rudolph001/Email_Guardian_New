@@ -51,45 +51,78 @@
                     </div>
                     
                     <div class="processing-stages">
-                        <h6>Processing Workflow:</h6>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="stage-item" id="stage-exclusion">
-                                    <i class="fas fa-filter stage-icon"></i>
-                                    <small>Exclusion Rules</small>
-                                    <div class="stage-stats">
-                                        <span class="badge bg-secondary" id="excluded-count">-</span>
-                                        <small class="text-muted d-block">Excluded</small>
+                        <h6><i class="fas fa-cogs"></i> Processing Workflow</h6>
+                        <p class="text-muted small mb-3">Email counts for each processing stage</p>
+                        <div class="row g-3">
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card h-100 stage-card" id="stage-exclusion">
+                                    <div class="card-body text-center">
+                                        <div class="stage-icon-wrapper mb-2">
+                                            <i class="fas fa-filter stage-icon text-secondary"></i>
+                                        </div>
+                                        <h6 class="card-title">Exclusion Rules</h6>
+                                        <p class="text-muted small">Filter records based on exclusion criteria</p>
+                                        <div class="stage-stats">
+                                            <h4 class="text-secondary mb-1" id="excluded-count">-</h4>
+                                            <small class="text-muted">Emails Excluded</small>
+                                        </div>
+                                        <div class="stage-status" id="exclusion-status">
+                                            <small class="text-muted">Waiting...</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="stage-item" id="stage-whitelist">
-                                    <i class="fas fa-list-check stage-icon"></i>
-                                    <small>Whitelist Filter</small>
-                                    <div class="stage-stats">
-                                        <span class="badge bg-success" id="whitelisted-count">-</span>
-                                        <small class="text-muted d-block">Whitelisted</small>
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card h-100 stage-card" id="stage-whitelist">
+                                    <div class="card-body text-center">
+                                        <div class="stage-icon-wrapper mb-2">
+                                            <i class="fas fa-shield-check stage-icon text-success"></i>
+                                        </div>
+                                        <h6 class="card-title">Whitelist Filtering</h6>
+                                        <p class="text-muted small">Remove trusted domain communications</p>
+                                        <div class="stage-stats">
+                                            <h4 class="text-success mb-1" id="whitelisted-count">-</h4>
+                                            <small class="text-muted">Emails Whitelisted</small>
+                                        </div>
+                                        <div class="stage-status" id="whitelist-status">
+                                            <small class="text-muted">Waiting...</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="stage-item" id="stage-rules">
-                                    <i class="fas fa-gavel stage-icon"></i>
-                                    <small>Rule Engine</small>
-                                    <div class="stage-stats">
-                                        <span class="badge bg-warning" id="rules-matched-count">-</span>
-                                        <small class="text-muted d-block">Rule Matches</small>
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card h-100 stage-card" id="stage-rules">
+                                    <div class="card-body text-center">
+                                        <div class="stage-icon-wrapper mb-2">
+                                            <i class="fas fa-exclamation-triangle stage-icon text-warning"></i>
+                                        </div>
+                                        <h6 class="card-title">Security Rules</h6>
+                                        <p class="text-muted small">Apply security rules and threat detection</p>
+                                        <div class="stage-stats">
+                                            <h4 class="text-warning mb-1" id="rules-matched-count">-</h4>
+                                            <small class="text-muted">Rule Matches</small>
+                                        </div>
+                                        <div class="stage-status" id="rules-status">
+                                            <small class="text-muted">Waiting...</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="stage-item" id="stage-ml">
-                                    <i class="fas fa-brain stage-icon"></i>
-                                    <small>ML Analysis</small>
-                                    <div class="stage-stats">
-                                        <span class="badge bg-danger" id="critical-cases-count">-</span>
-                                        <small class="text-muted d-block">Critical Cases</small>
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card h-100 stage-card" id="stage-ml">
+                                    <div class="card-body text-center">
+                                        <div class="stage-icon-wrapper mb-2">
+                                            <i class="fas fa-brain stage-icon text-danger"></i>
+                                        </div>
+                                        <h6 class="card-title">ML Analysis</h6>
+                                        <p class="text-muted small">Machine learning anomaly detection</p>
+                                        <div class="stage-stats">
+                                            <h4 class="text-danger mb-1" id="critical-cases-count">-</h4>
+                                            <small class="text-muted">Critical Cases</small>
+                                        </div>
+                                        <div class="stage-status" id="ml-status">
+                                            <small class="text-muted">Waiting...</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -137,12 +170,37 @@
                                 }
                                 
                                 if (progressText) {
-                                    progressText.textContent = `Processed ${data.processed_records} of ${data.total_records} records`;
+                                    progressText.textContent = data.progress_percent + '%';
+                                }
+                                
+                                // Update workflow stage statistics
+                                if (data.workflow_stats) {
+                                    const stats = data.workflow_stats;
+                                    
+                                    // Update counts with animation
+                                    updateStageCount('excluded-count', stats.excluded_count || 0);
+                                    updateStageCount('whitelisted-count', stats.whitelisted_count || 0);
+                                    updateStageCount('rules-matched-count', stats.rules_matched_count || 0);
+                                    updateStageCount('critical-cases-count', stats.critical_cases_count || 0);
+                                    
+                                    // Update stage status indicators
+                                    updateStageStatus('exclusion-status', stats.excluded_count > 0 ? 'Complete' : 'No exclusions', 'success');
+                                    updateStageStatus('whitelist-status', stats.whitelisted_count > 0 ? 'Complete' : 'No matches', 'success');
+                                    updateStageStatus('rules-status', stats.rules_matched_count > 0 ? 'Matches found' : 'No violations', stats.rules_matched_count > 0 ? 'warning' : 'success');
+                                    updateStageStatus('ml-status', stats.critical_cases_count > 0 ? 'Threats detected' : 'Analysis complete', stats.critical_cases_count > 0 ? 'danger' : 'success');
+                                    
+                                    // Highlight stages with significant results
+                                    highlightStage('stage-exclusion', stats.excluded_count > 0);
+                                    highlightStage('stage-whitelist', stats.whitelisted_count > 0);
+                                    highlightStage('stage-rules', stats.rules_matched_count > 0);
+                                    highlightStage('stage-ml', stats.critical_cases_count > 0);
                                 }
                                 
                                 // Redirect to dashboard when completed
                                 if (data.status === 'completed') {
-                                    window.location.href = `/dashboard/${sessionId}`;
+                                    setTimeout(() => {
+                                        window.location.href = `/dashboard/${sessionId}`;
+                                    }, 2000);
                                 }
                                 
                                 // Show error if failed
@@ -170,6 +228,37 @@
                             clearInterval(intervalId);
                         }
                     });
+                    
+                    function updateStageCount(elementId, count) {
+                        const element = document.getElementById(elementId);
+                        if (element && element.textContent !== count.toString()) {
+                            element.style.transform = 'scale(1.1)';
+                            element.textContent = count;
+                            setTimeout(() => {
+                                element.style.transform = 'scale(1)';
+                            }, 200);
+                        }
+                    }
+                    
+                    function updateStageStatus(elementId, message, type) {
+                        const element = document.getElementById(elementId);
+                        if (element) {
+                            element.innerHTML = `<small class="text-${type}"><i class="fas fa-check-circle"></i> ${message}</small>`;
+                        }
+                    }
+                    
+                    function highlightStage(stageId, hasResults) {
+                        const stage = document.getElementById(stageId);
+                        if (stage) {
+                            if (hasResults) {
+                                stage.classList.add('border-primary', 'shadow-sm');
+                                stage.style.borderWidth = '2px';
+                            } else {
+                                stage.classList.remove('border-primary', 'shadow-sm');
+                                stage.style.borderWidth = '1px';
+                            }
+                        }
+                    }
                     </script>
                     
                     <!-- Error display -->
@@ -189,6 +278,24 @@
 </div>
 
 <style>
+.stage-card {
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+}
+
+.stage-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.stage-icon {
+    font-size: 2rem;
+}
+
+.stage-stats h4 {
+    transition: transform 0.2s ease;
+}
+
 .stage-item {
     text-align: center;
     padding: 1rem;

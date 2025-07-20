@@ -144,14 +144,14 @@ def processing_status(session_id):
         except Exception as e:
             logger.warning(f"Could not get workflow stats: {str(e)}")
     
-    return {
+    return jsonify({
         'status': session.status,
         'total_records': session.total_records or 0,
         'processed_records': session.processed_records or 0,
         'progress_percent': int((session.processed_records or 0) / max(session.total_records or 1, 1) * 100),
         'error_message': session.error_message,
         'workflow_stats': workflow_stats
-    }
+    })
 
 @app.route('/api/dashboard-stats/<session_id>')
 def dashboard_stats(session_id):
