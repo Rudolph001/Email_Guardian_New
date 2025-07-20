@@ -50,6 +50,7 @@ You need to download the entire `templates/` and `static/` folders:
 
 4. **Run the setup**:
    - **Windows**: Double-click `run_local.bat` OR run `python setup_local.py`
+   - **If setup fails**: Run `python install_manual.py` then `python local_app.py`
    - **Mac/Linux**: Run `./run_local.sh` OR run `python setup_local.py`
 
 5. **Start the application**:

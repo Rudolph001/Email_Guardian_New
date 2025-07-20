@@ -43,10 +43,32 @@ def create_app(config_class=LocalConfig):
 app = create_app()
 
 if __name__ == '__main__':
-    # Run the development server
-    app.run(
-        host='127.0.0.1',  # localhost for local development
-        port=5000,
-        debug=True,
-        threaded=True
-    )
+    # Check if running on Windows and use appropriate server
+    import platform
+    
+    if platform.system() == 'Windows':
+        try:
+            from waitress import serve
+            print("Starting Email Guardian on Windows with Waitress server...")
+            print("Open your browser to: http://127.0.0.1:5000")
+            print("Press Ctrl+C to stop the server")
+            serve(app, host='127.0.0.1', port=5000)
+        except ImportError:
+            print("Waitress not available, using Flask development server...")
+            app.run(
+                host='127.0.0.1',
+                port=5000,
+                debug=True,
+                threaded=True
+            )
+    else:
+        # Unix/Linux/macOS - use Flask development server
+        print("Starting Email Guardian...")
+        print("Open your browser to: http://127.0.0.1:5000")
+        print("Press Ctrl+C to stop the server")
+        app.run(
+            host='127.0.0.1',
+            port=5000,
+            debug=True,
+            threaded=True
+        )

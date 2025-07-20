@@ -40,11 +40,25 @@ Download all the following files to a single directory on your machine:
 - `static/` folder - CSS, JavaScript, and assets
 
 ### Step 2: Run Setup Script
+
+**Option A - Automatic Setup:**
 ```bash
 python setup_local.py
 ```
 
-This will:
+**Option B - If setup fails (Windows Python 3.13+):**
+```bash
+python install_manual.py
+python local_app.py
+```
+
+**Option C - Manual Installation:**
+```bash
+pip install Flask Flask-SQLAlchemy pandas numpy scikit-learn networkx email-validator waitress
+python local_app.py
+```
+
+The setup will:
 - Check Python version compatibility
 - Install required packages
 - Create necessary directories

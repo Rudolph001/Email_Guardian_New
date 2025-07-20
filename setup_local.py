@@ -17,15 +17,54 @@ def check_python_version():
 def install_requirements():
     """Install required packages"""
     print("\nInstalling requirements...")
+    print("This may take a few minutes...")
+    
     try:
+        # First upgrade pip to latest version
+        print("Upgrading pip...")
         subprocess.check_call([
-            sys.executable, "-m", "pip", "install", "-r", "local_requirements.txt"
+            sys.executable, "-m", "pip", "install", "--upgrade", "pip"
         ])
-        print("✓ Requirements installed successfully")
+        
+        # Install packages one by one for better error reporting
+        packages = [
+            "Flask>=2.3.0",
+            "Flask-SQLAlchemy>=3.0.0", 
+            "SQLAlchemy>=1.4.0",
+            "Werkzeug>=2.3.0",
+            "pandas>=1.5.0",
+            "numpy>=1.21.0", 
+            "scikit-learn>=1.2.0",
+            "networkx>=2.8.0",
+            "email-validator>=1.3.0",
+            "waitress>=2.1.0",
+            "python-dotenv>=0.19.0"
+        ]
+        
+        for package in packages:
+            print(f"Installing {package}...")
+            subprocess.check_call([
+                sys.executable, "-m", "pip", "install", package
+            ])
+            
+        print("✓ All requirements installed successfully")
         return True
+        
     except subprocess.CalledProcessError as e:
-        print(f"ERROR: Failed to install requirements: {e}")
-        return False
+        print(f"ERROR: Failed to install package: {e}")
+        print("\nTrying alternative installation method...")
+        
+        # Try installing from requirements file as fallback
+        try:
+            subprocess.check_call([
+                sys.executable, "-m", "pip", "install", "-r", "local_requirements.txt"
+            ])
+            print("✓ Requirements installed successfully using fallback method")
+            return True
+        except subprocess.CalledProcessError as e2:
+            print(f"ERROR: Both installation methods failed")
+            print(f"Please manually install packages: pip install -r local_requirements.txt")
+            return False
 
 def create_directories():
     """Create necessary directories"""
