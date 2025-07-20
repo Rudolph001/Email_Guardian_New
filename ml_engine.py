@@ -8,6 +8,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import StandardScaler
 from models import EmailRecord, AttachmentKeyword
+from performance_config import config
 from app import db
 
 logger = logging.getLogger(__name__)
@@ -18,8 +19,10 @@ class MLEngine:
     def __init__(self):
         self.isolation_forest = None
         self.dbscan = None
-        self.tfidf_vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
+        self.tfidf_vectorizer = TfidfVectorizer(max_features=config.tfidf_max_features, stop_words='english')
         self.scaler = StandardScaler()
+        self.fast_mode = config.fast_mode
+        logger.info(f"MLEngine initialized with fast_mode={self.fast_mode}")
         
         # Risk thresholds
         self.risk_thresholds = {
@@ -41,9 +44,14 @@ class MLEngine:
                 EmailRecord.whitelisted == False
             ).all()
             
-            if len(records) < 5:
+            if len(records) < 3:  # Reduced minimum for faster processing
                 logger.warning(f"Too few records ({len(records)}) for ML analysis")
                 return {'processing_stats': {'ml_records_analyzed': len(records)}}
+            
+            # Fast mode: limit records for processing speed
+            if self.fast_mode and len(records) > config.max_ml_records:
+                logger.info(f"Fast mode: Processing sample of {config.max_ml_records} records out of {len(records)}")
+                records = records[:config.max_ml_records]
             
             # Convert to DataFrame for analysis
             df = self._records_to_dataframe(records)
@@ -205,11 +213,12 @@ class MLEngine:
             # Normalize features
             features_scaled = self.scaler.fit_transform(features)
             
-            # Train Isolation Forest
+            # Train Isolation Forest (optimized for speed)
             self.isolation_forest = IsolationForest(
                 contamination=0.1,  # Expect 10% anomalies
                 random_state=42,
-                n_estimators=100
+                n_estimators=config.ml_estimators,
+                n_jobs=1 if self.fast_mode else -1  # Single core in fast mode for stability
             )
             
             # Fit and predict

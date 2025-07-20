@@ -8,6 +8,7 @@ from session_manager import SessionManager
 from rule_engine import RuleEngine
 from domain_manager import DomainManager
 from ml_engine import MLEngine
+from performance_config import config
 from app import db
 
 logger = logging.getLogger(__name__)
@@ -16,11 +17,13 @@ class DataProcessor:
     """Handles CSV processing and workflow engine"""
     
     def __init__(self):
-        self.chunk_size = 500  # Reduced for better responsiveness
+        self.chunk_size = config.chunk_size
         self.session_manager = SessionManager()
         self.rule_engine = RuleEngine()
         self.domain_manager = DomainManager()
         self.ml_engine = MLEngine()
+        self.enable_fast_mode = config.fast_mode
+        logger.info(f"DataProcessor initialized with config: {config.get_config_summary()}")
         
         # Expected CSV columns (case-insensitive matching)
         self.expected_columns = [
@@ -53,16 +56,16 @@ class DataProcessor:
             
             processed_count = 0
             
-            # Process file in smaller chunks for better performance
-            chunk_size = min(250, self.chunk_size)  # Use smaller chunks for responsiveness
+            # Use optimized chunk size for performance
+            chunk_size = self.chunk_size if self.enable_fast_mode else min(500, self.chunk_size)
             
             # Process file in chunks
             for chunk_df in pd.read_csv(file_path, chunksize=chunk_size):
                 try:
                     processed_count += self._process_chunk(session_id, chunk_df, column_mapping, processed_count)
                     
-                    # Update progress more frequently for better UX
-                    if processed_count % 100 == 0:  # Update every 100 records
+                    # Update progress based on configuration
+                    if processed_count % config.progress_update_interval == 0:
                         if session:
                             session.processed_records = processed_count
                             db.session.commit()
