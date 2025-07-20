@@ -10,7 +10,7 @@ import platform
 import logging
 import uuid
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -78,6 +78,20 @@ class ProcessingSession(db.Model):
     
     def __repr__(self):
         return f'<ProcessingSession {self.id}>'
+
+class WhitelistDomain(db.Model):
+    __tablename__ = 'whitelist_domains'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    domain = db.Column(db.String(255), nullable=False, unique=True, index=True)
+    domain_type = db.Column(db.String(50), default='Corporate')  # Corporate, Personal, Public, Partner
+    added_by = db.Column(db.String(100), default='Admin')
+    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+    notes = db.Column(Text)
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    
+    def __repr__(self):
+        return f'<WhitelistDomain {self.domain}>'
 
 # Routes
 @app.route('/')
@@ -160,9 +174,110 @@ def rules():
     """Rules management page"""
     return render_template('rules.html')
 
+@app.route('/whitelist-domains')
+def whitelist_domains():
+    """Whitelist domains management interface"""
+    return render_template('whitelist_domains.html')
+
+@app.route('/api/whitelist-domains', methods=['GET', 'POST'])
+def api_whitelist_domains():
+    """Get all whitelist domains or create new one"""
+    if request.method == 'GET':
+        domains = WhitelistDomain.query.order_by(WhitelistDomain.added_at.desc()).all()
+        return jsonify([{
+            'id': domain.id,
+            'domain': domain.domain,
+            'domain_type': domain.domain_type,
+            'added_by': domain.added_by,
+            'added_at': domain.added_at.isoformat() if domain.added_at else None,
+            'notes': domain.notes,
+            'is_active': domain.is_active
+        } for domain in domains])
+
+    elif request.method == 'POST':
+        try:
+            data = request.get_json() or {}
+            domain_name = data.get('domain', '').strip().lower()
+            
+            if not domain_name:
+                return jsonify({'success': False, 'message': 'Domain is required'}), 400
+            
+            # Check if domain already exists
+            existing = WhitelistDomain.query.filter_by(domain=domain_name).first()
+            if existing:
+                return jsonify({'success': False, 'message': f'Domain {domain_name} already exists'}), 400
+            
+            whitelist_domain = WhitelistDomain(
+                domain=domain_name,
+                domain_type=data.get('domain_type', 'Corporate'),
+                added_by=data.get('added_by', 'Admin'),
+                notes=data.get('notes', '')
+            )
+            
+            db.session.add(whitelist_domain)
+            db.session.commit()
+            
+            return jsonify({'success': True, 'message': f'Domain {domain_name} added successfully', 'id': whitelist_domain.id})
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/whitelist-domains/<int:domain_id>/toggle', methods=['POST'])
+def api_toggle_whitelist_domain(domain_id):
+    """Toggle whitelist domain active status"""
+    try:
+        domain = WhitelistDomain.query.get_or_404(domain_id)
+        domain.is_active = not domain.is_active
+        db.session.commit()
+        
+        status = 'activated' if domain.is_active else 'deactivated'
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Domain {domain.domain} {status} successfully',
+            'is_active': domain.is_active
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/whitelist-domains/<int:domain_id>', methods=['DELETE'])
+def api_delete_whitelist_domain(domain_id):
+    """Delete whitelist domain"""
+    try:
+        domain = WhitelistDomain.query.get_or_404(domain_id)
+        domain_name = domain.domain
+        db.session.delete(domain)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': f'Domain {domain_name} deleted successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 # Initialize the database
 with app.app_context():
     db.create_all()
+    
+    # Add default whitelist domains if none exist
+    if WhitelistDomain.query.count() == 0:
+        print("Adding default whitelist domains...")
+        default_domains = [
+            {'domain': 'company.com', 'domain_type': 'Corporate', 'notes': 'Default corporate domain'},
+            {'domain': 'corp.com', 'domain_type': 'Corporate', 'notes': 'Default corporate domain'},
+            {'domain': 'trusted-partner.com', 'domain_type': 'Corporate', 'notes': 'Trusted business partner'}
+        ]
+        
+        for domain_data in default_domains:
+            domain = WhitelistDomain(**domain_data)
+            db.session.add(domain)
+        
+        db.session.commit()
+        print(f"Added {len(default_domains)} default whitelist domains")
+    
     print("Database tables created successfully!")
     print(f"Application running with professional template system")
     print(f"Platform: {platform.system()} {platform.release()}")
