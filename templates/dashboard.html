@@ -77,7 +77,7 @@
                         <h3 class="mb-0 animated-number" id="analyzedRecords" data-target="{{ stats.session_info.processed_records or 0 }}">0</h3>
                         <p class="mb-0">Analyzed Records</p>
                         <div class="animated-progress mt-2">
-                            <div class="progress-bar" style="width: {{ ((stats.session_info.processed_records or 0) / max(stats.session_info.total_records or 1, 1) * 100) }}%"></div>
+                            <div class="progress-bar" style="width: {% if stats.session_info.total_records and stats.session_info.total_records > 0 %}{{ ((stats.session_info.processed_records or 0) / stats.session_info.total_records * 100) }}{% else %}0{% endif %}%"></div>
                         </div>
                     </div>
                     <div class="ms-auto">
@@ -117,7 +117,7 @@
                         <h3 class="mb-0 animated-number" id="avgRiskScore" data-target="{{ "%.3f"|format(ml_insights.average_risk_score or 0) }}">0.000</h3>
                         <p class="mb-0">Avg Risk Score</p>
                         <div class="animated-progress mt-2">
-                            <div class="progress-bar" style="width: {{ (ml_insights.average_risk_score or 0) * 100 }}%"></div>
+                            <div class="progress-bar" style="width: {{ ((ml_insights.average_risk_score or 0) * 100) }}%"></div>
                         </div>
                     </div>
                     <div class="ms-auto">
