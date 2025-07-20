@@ -499,6 +499,52 @@ def api_processing_errors(session_id):
         'resolved': error.resolved
     } for error in errors])
 
+@app.route('/api/sender_details/<session_id>/<sender_email>')
+def api_sender_details(session_id, sender_email):
+    """Get detailed sender information"""
+    try:
+        # Get sender analysis
+        analysis = advanced_ml_engine.analyze_sender_behavior(session_id)
+        
+        if not analysis or 'sender_profiles' not in analysis:
+            return jsonify({'error': 'No sender analysis available'}), 404
+            
+        sender_data = analysis['sender_profiles'].get(sender_email)
+        
+        if not sender_data:
+            return jsonify({'error': 'Sender not found in analysis'}), 404
+            
+        # Get recent communications for this sender
+        recent_records = EmailRecord.query.filter_by(
+            session_id=session_id,
+            sender=sender_email
+        ).order_by(EmailRecord.id.desc()).limit(5).all()
+        
+        recent_activity = []
+        for record in recent_records:
+            recent_activity.append({
+                'record_id': record.record_id,
+                'recipient_domain': record.recipients_email_domain,
+                'subject': record.subject[:50] + '...' if record.subject and len(record.subject) > 50 else record.subject,
+                'risk_score': record.ml_risk_score,
+                'risk_level': record.risk_level,
+                'has_attachments': bool(record.attachments),
+                'time': record.time
+            })
+        
+        sender_details = {
+            'sender_email': sender_email,
+            'profile': sender_data,
+            'recent_activity': recent_activity,
+            'analysis_timestamp': datetime.utcnow().isoformat()
+        }
+        
+        return jsonify(sender_details)
+        
+    except Exception as e:
+        logger.error(f"Error getting sender details for {sender_email} in session {session_id}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/admin/session/<session_id>', methods=['DELETE'])
 def delete_session(session_id):
     """Delete a processing session and all associated data"""

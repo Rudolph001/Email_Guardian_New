@@ -447,28 +447,130 @@ function viewSenderDetails(senderEmail) {
     const modal = new bootstrap.Modal(document.getElementById('senderDetailsModal'));
     modal.show();
     
-    // Simulate loading sender details
-    setTimeout(() => {
+    // Find sender data from the current analysis
+    const senderData = findSenderData(senderEmail);
+    
+    if (senderData) {
         modalBody.innerHTML = `
             <div class="row">
                 <div class="col-md-6">
                     <h6>Sender Information</h6>
                     <p><strong>Email:</strong> ${senderEmail}</p>
-                    <p><strong>Total Communications:</strong> <span class="badge bg-info">Processing...</span></p>
-                    <p><strong>Risk Assessment:</strong> <span class="text-warning">Analyzing...</span></p>
+                    <p><strong>Total Communications:</strong> <span class="badge bg-info">${senderData.total_emails}</span></p>
+                    <p><strong>Risk Assessment:</strong> 
+                        <span class="fw-bold ${senderData.risk_score_avg > 0.7 ? 'text-danger' : senderData.risk_score_avg > 0.4 ? 'text-warning' : 'text-success'}">
+                            ${senderData.risk_score_avg.toFixed(3)} (${senderData.risk_score_avg > 0.7 ? 'High Risk' : senderData.risk_score_avg > 0.4 ? 'Medium Risk' : 'Low Risk'})
+                        </span>
+                    </p>
+                    <p><strong>Attachments Sent:</strong> <span class="badge bg-secondary">${senderData.attachments_sent || 0}</span></p>
                 </div>
                 <div class="col-md-6">
                     <h6>Communication Patterns</h6>
-                    <p><strong>External Ratio:</strong> Calculating...</p>
-                    <p><strong>Domains Contacted:</strong> Analyzing...</p>
-                    <p><strong>Behavior Flags:</strong> None detected</p>
+                    <p><strong>External Ratio:</strong> 
+                        <span class="${senderData.external_ratio > 0.8 ? 'text-danger' : senderData.external_ratio > 0.5 ? 'text-warning' : 'text-success'}">
+                            ${(senderData.external_ratio * 100).toFixed(1)}%
+                        </span>
+                    </p>
+                    <p><strong>Domains Contacted:</strong> <span class="badge bg-info">${senderData.domains_contacted ? senderData.domains_contacted.length : 0}</span></p>
+                    <p><strong>Behavior Flags:</strong> 
+                        ${senderData.behavior_flags && senderData.behavior_flags.length > 0 
+                            ? senderData.behavior_flags.map(flag => `<span class="badge bg-warning me-1">${flag}</span>`).join('') 
+                            : '<span class="text-muted">None detected</span>'}
+                    </p>
                 </div>
             </div>
             <hr>
-            <h6>Recent Activity</h6>
-            <p class="text-muted">Detailed sender activity analysis would be displayed here in a complete implementation.</p>
+            <h6>Recent Activity & Risk Breakdown</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>High Risk Communications:</strong> ${senderData.high_risk_emails || 0}</p>
+                    <p><strong>External Communications:</strong> ${senderData.external_emails || 0}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Risk Score Range:</strong> ${senderData.risk_score_avg > 0.7 ? 'Critical' : senderData.risk_score_avg > 0.6 ? 'High' : senderData.risk_score_avg > 0.4 ? 'Medium' : 'Low'}</p>
+                    <p><strong>Activity Pattern:</strong> ${senderData.total_emails > 10 ? 'High Volume' : senderData.total_emails > 3 ? 'Medium Volume' : 'Low Volume'}</p>
+                </div>
+            </div>
+            ${senderData.domains_contacted && senderData.domains_contacted.length > 0 ? `
+            <hr>
+            <h6>External Domains Contacted</h6>
+            <div class="d-flex flex-wrap gap-1">
+                ${senderData.domains_contacted.slice(0, 10).map(domain => `<span class="badge bg-outline-secondary">${domain}</span>`).join('')}
+                ${senderData.domains_contacted.length > 10 ? `<span class="text-muted">+${senderData.domains_contacted.length - 10} more</span>` : ''}
+            </div>
+            ` : ''}
         `;
-    }, 1500);
+        
+        // Load additional data from API
+        loadSenderDetailsFromAPI(senderEmail, modalBody);
+    } else {
+        modalBody.innerHTML = `
+            <div class="alert alert-warning">
+                <h6><i class="fas fa-exclamation-triangle"></i> Sender Not Found</h6>
+                <p class="mb-0">Unable to find detailed analysis for sender: ${senderEmail}</p>
+            </div>
+        `;
+    }
+}
+
+function findSenderData(senderEmail) {
+    // Get the sender data from the current page's analysis data
+    try {
+        const analysisData = {{ analysis | tojson }};
+        if (analysisData && analysisData.sender_profiles) {
+            return analysisData.sender_profiles[senderEmail];
+        }
+    } catch (e) {
+        console.error('Error accessing sender data:', e);
+    }
+    return null;
+}
+
+function loadSenderDetailsFromAPI(senderEmail, modalBody) {
+    // Also fetch the latest data from API for more complete information
+    fetch(`/api/sender_details/${window.currentSessionId}/${encodeURIComponent(senderEmail)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.warn('Could not load additional sender details:', data.error);
+                return;
+            }
+            
+            // Update the modal with additional recent activity information
+            const recentActivityHtml = data.recent_activity && data.recent_activity.length > 0 
+                ? `
+                <hr>
+                <h6>Recent Communications</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Recipient Domain</th>
+                                <th>Subject</th>
+                                <th>Risk Level</th>
+                                <th>Attachments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.recent_activity.map(activity => `
+                                <tr>
+                                    <td><span class="badge bg-outline-info">${activity.recipient_domain || 'N/A'}</span></td>
+                                    <td><small>${activity.subject || 'No Subject'}</small></td>
+                                    <td><span class="badge bg-${activity.risk_level === 'Critical' ? 'danger' : activity.risk_level === 'High' ? 'warning' : activity.risk_level === 'Medium' ? 'info' : 'success'}">${activity.risk_level || 'Low'}</span></td>
+                                    <td>${activity.has_attachments ? '<i class="fas fa-paperclip text-info"></i>' : '<i class="fas fa-times text-muted"></i>'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ` : '';
+                
+            // Append the recent activity to the existing modal content
+            modalBody.innerHTML += recentActivityHtml;
+        })
+        .catch(error => {
+            console.error('Error loading additional sender details:', error);
+        });
 }
 
 function analyzeSenderCommunications(senderEmail) {
