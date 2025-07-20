@@ -335,11 +335,25 @@ def advanced_ml_dashboard(session_id):
 @app.route('/admin')
 def admin():
     """Administration panel"""
+    # System statistics for the new admin template
+    stats = {
+        'total_sessions': ProcessingSession.query.count(),
+        'active_sessions': ProcessingSession.query.filter_by(status='processing').count(),
+        'completed_sessions': ProcessingSession.query.filter_by(status='completed').count(),
+        'failed_sessions': ProcessingSession.query.filter_by(status='failed').count()
+    }
+    
+    # Recent sessions for the admin panel
+    recent_sessions = ProcessingSession.query.order_by(ProcessingSession.upload_time.desc()).limit(5).all()
+    
+    # Legacy data for backward compatibility (if needed)
     sessions = ProcessingSession.query.order_by(ProcessingSession.upload_time.desc()).all()
     whitelist_domains = WhitelistDomain.query.filter_by(is_active=True).all()
     attachment_keywords = AttachmentKeyword.query.filter_by(is_active=True).all()
 
     return render_template('admin.html',
+                         stats=stats,
+                         recent_sessions=recent_sessions,
                          sessions=sessions,
                          whitelist_domains=whitelist_domains,
                          attachment_keywords=attachment_keywords)
@@ -347,6 +361,7 @@ def admin():
 @app.route('/rules')
 def rules():
     """Rules management interface"""
+    # Get existing rules for backward compatibility
     security_rules = Rule.query.filter_by(rule_type='security', is_active=True).all()
     exclusion_rules = Rule.query.filter_by(rule_type='exclusion', is_active=True).all()
 
