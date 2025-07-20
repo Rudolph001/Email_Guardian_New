@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+
+{% block title %}Escalations - Session {{ session.id[:8] }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Upload</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard', session_id=session.id) }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Escalations</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h2">
+                <i class="fas fa-exclamation-triangle text-danger"></i>
+                Critical Escalations
+            </h1>
+            <div class="session-info">
+                <span class="badge bg-primary fs-6">{{ session.filename }}</span>
+                <span class="badge bg-danger fs-6">{{ critical_cases|length + escalated_cases|length }} escalations</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Summary -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="alert alert-danger border-start border-5 border-danger">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">{{ critical_cases|length }} Critical Cases</h5>
+                    <p class="mb-0">Require immediate attention and review</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="alert alert-warning border-start border-5 border-warning">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-arrow-up fa-2x me-3"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">{{ escalated_cases|length }} Escalated Cases</h5>
+                    <p class="mb-0">Previously escalated and under investigation</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Bar -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h6 class="mb-0">Quick Escalation Actions</h6>
+                <small class="text-muted">Bulk operations for selected cases</small>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-sm btn-outline-primary" onclick="generateBulkReport()">
+                    <i class="fas fa-file-pdf"></i> Generate Report
+                </button>
+                <button class="btn btn-sm btn-outline-success" onclick="exportEscalations()">
+                    <i class="fas fa-download"></i> Export Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Critical Cases Section -->
+{% if critical_cases %}
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-fire"></i>
+            Critical Risk Cases ({{ critical_cases|length }})
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Priority</th>
+                        <th>Sender</th>
+                        <th>Subject</th>
+                        <th>Risk Score</th>
+                        <th>Risk Factors</th>
+                        <th>Time</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in critical_cases %}
+                    <tr class="table-danger">
+                        <td>
+                            <span class="badge bg-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                CRITICAL
+                            </span>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>{{ case.sender[:25] }}{% if case.sender|length > 25 %}...{% endif %}</strong>
+                                {% if case.leaver and case.leaver.lower() in ['yes', 'true', '1'] %}
+                                    <br><span class="badge bg-warning">Leaver</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div title="{{ case.subject }}">
+                                {{ case.subject[:40] }}{% if case.subject|length > 40 %}...{% endif %}
+                            </div>
+                            {% if case.attachments %}
+                                <br><small class="text-muted">
+                                    <i class="fas fa-paperclip"></i> {{ case.attachments[:30] }}{% if case.attachments|length > 30 %}...{% endif %}
+                                </small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="text-center">
+                                <div class="h5 text-danger mb-1">{{ "%.3f"|format(case.ml_risk_score or 0) }}</div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-danger" style="width: {{ ((case.ml_risk_score or 0) * 100)|int }}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="risk-factors">
+                                {% if case.rule_matches %}
+                                    {% set rule_matches = case.rule_matches|from_json if case.rule_matches is string else case.rule_matches %}
+                                    {% for rule in rule_matches[:2] %}
+                                        <span class="badge bg-secondary">{{ rule.rule_name }}</span><br>
+                                    {% endfor %}
+                                {% endif %}
+                                {% if case.ml_explanation %}
+                                    <small class="text-muted">{{ case.ml_explanation[:50] }}...</small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <small>{{ case.time[:16] if case.time else 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group-vertical btn-group-sm" role="group">
+                                <button class="btn btn-outline-primary view-case-btn" 
+                                        data-record-id="{{ case.record_id }}" title="View Details">
+                                    <i class="fas fa-eye"></i> Details
+                                </button>
+                                <button class="btn btn-outline-success update-case-status-btn" 
+                                        data-record-id="{{ case.record_id }}" data-new-status="Escalated" title="Escalate">
+                                    <i class="fas fa-arrow-up"></i> Escalate
+                                </button>
+                                <button class="btn btn-outline-info generate-email-btn" 
+                                        data-record-id="{{ case.record_id }}" title="Generate Email">
+                                    <i class="fas fa-envelope"></i> Email
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Escalated Cases Section -->
+{% if escalated_cases %}
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-arrow-up"></i>
+            Previously Escalated Cases ({{ escalated_cases|length }})
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Escalation Date</th>
+                        <th>Sender</th>
+                        <th>Subject</th>
+                        <th>Risk Score</th>
+                        <th>Current Status</th>
+                        <th>Assigned To</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in escalated_cases %}
+                    <tr class="table-warning">
+                        <td>
+                            <small>{{ case.escalated_at.strftime('%Y-%m-%d %H:%M') if case.escalated_at else 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ case.sender[:25] }}{% if case.sender|length > 25 %}...{% endif %}</strong>
+                        </td>
+                        <td title="{{ case.subject }}">
+                            {{ case.subject[:40] }}{% if case.subject|length > 40 %}...{% endif %}
+                        </td>
+                        <td>
+                            <span class="fw-bold text-danger">{{ "%.3f"|format(case.ml_risk_score or 0) }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-warning">Escalated</span>
+                        </td>
+                        <td>
+                            {% if case.assigned_to %}
+                                <span class="badge bg-info">{{ case.assigned_to }}</span>
+                            {% else %}
+                                <span class="text-muted">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-outline-primary view-case-btn" 
+                                        data-record-id="{{ case.record_id }}" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-success update-case-status-btn" 
+                                        data-record-id="{{ case.record_id }}" data-new-status="Cleared" title="Resolve">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-outline-info" onclick="assignCase('{{ case.record_id }}')" title="Assign">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- No Escalations -->
+{% if not critical_cases and not escalated_cases %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+        <h4 class="text-success">No Critical Escalations</h4>
+        <p class="text-muted">Great! There are currently no critical cases requiring immediate attention.</p>
+        <a href="{{ url_for('cases', session_id=session.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-list"></i> View All Cases
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Escalation Statistics -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-chart-bar text-primary"></i>
+                    Escalation Trends
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="escalation-stats">
+                    <div class="stat-item d-flex justify-content-between mb-2">
+                        <span>Total Critical Cases:</span>
+                        <span class="fw-bold text-danger">{{ critical_cases|length }}</span>
+                    </div>
+                    <div class="stat-item d-flex justify-content-between mb-2">
+                        <span>Total Escalated:</span>
+                        <span class="fw-bold text-warning">{{ escalated_cases|length }}</span>
+                    </div>
+                    <div class="stat-item d-flex justify-content-between mb-2">
+                        <span>Avg Critical Risk Score:</span>
+                        <span class="fw-bold">
+                            {% if critical_cases %}
+                                {{ "%.3f"|format(critical_cases|map(attribute='ml_risk_score')|list|sum / critical_cases|length) }}
+                            {% else %}
+                                0.000
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="stat-item d-flex justify-content-between">
+                        <span>Resolution Rate:</span>
+                        <span class="fw-bold text-success">
+                            {% set total_escalations = critical_cases|length + escalated_cases|length %}
+                            {% if total_escalations > 0 %}
+                                {{ "%.1f"|format((escalated_cases|selectattr('case_status', 'equalto', 'Cleared')|list|length / total_escalations) * 100) }}%
+                            {% else %}
+                                100%
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-tasks text-primary"></i>
+                    Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="generateEscalationReport()">
+                        <i class="fas fa-file-alt"></i> Generate Escalation Report
+                    </button>
+                    <button class="btn btn-outline-info" onclick="bulkAssignEscalations()">
+                        <i class="fas fa-users"></i> Bulk Assign Cases
+                    </button>
+                    <button class="btn btn-outline-success" onclick="markAllReviewed()">
+                        <i class="fas fa-eye"></i> Mark All as Reviewed
+                    </button>
+                    <a href="{{ url_for('cases', session_id=session.id, risk_level='Critical') }}" class="btn btn-outline-danger">
+                        <i class="fas fa-exclamation-triangle"></i> View All Critical Cases
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assignment Modal -->
+<div class="modal fade" id="assignmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Case</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignmentForm">
+                    <div class="mb-3">
+                        <label for="assignTo" class="form-label">Assign To:</label>
+                        <select class="form-select" id="assignTo" required>
+                            <option value="">Select an analyst...</option>
+                            <option value="Security Team">Security Team</option>
+                            <option value="IT Manager">IT Manager</option>
+                            <option value="Compliance Officer">Compliance Officer</option>
+                            <option value="Senior Analyst">Senior Analyst</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="assignmentNotes" class="form-label">Notes:</label>
+                        <textarea class="form-control" id="assignmentNotes" rows="3" 
+                                  placeholder="Additional notes or instructions..."></textarea>
+                    </div>
+                    <input type="hidden" id="assignmentRecordId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitAssignment()">Assign Case</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Set session ID for JavaScript functions
+window.currentSessionId = '{{ session.id }}';
+
+function assignCase(recordId) {
+    document.getElementById('assignmentRecordId').value = recordId;
+    const assignmentModal = new bootstrap.Modal(document.getElementById('assignmentModal'));
+    assignmentModal.show();
+}
+
+function submitAssignment() {
+    const recordId = document.getElementById('assignmentRecordId').value;
+    const assignTo = document.getElementById('assignTo').value;
+    const notes = document.getElementById('assignmentNotes').value;
+    
+    if (!assignTo) {
+        alert('Please select someone to assign the case to.');
+        return;
+    }
+    
+    // Update case with assignment
+    fetch(`/api/case/${currentSessionId}/${recordId}/status`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            assigned_to: assignTo,
+            notes: notes ? `Assigned to ${assignTo}: ${notes}` : `Assigned to ${assignTo}`
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.error) {
+            showError('Failed to assign case: ' + result.error);
+        } else {
+            showSuccess(`Case assigned to ${assignTo}`);
+            const assignmentModal = bootstrap.Modal.getInstance(document.getElementById('assignmentModal'));
+            assignmentModal.hide();
+            setTimeout(() => location.reload(), 1500);
+        }
+    })
+    .catch(error => {
+        console.error('Assignment error:', error);
+        showError('Failed to assign case');
+    });
+}
+
+function generateEscalationReport() {
+    showLoading('Generating escalation report...');
+    
+    // Simulate report generation
+    setTimeout(() => {
+        hideLoading();
+        showSuccess('Escalation report generated successfully');
+        
+        // In a real implementation, this would download or display the report
+        console.log('Escalation report would be generated here');
+    }, 2000);
+}
+
+function bulkAssignEscalations() {
+    const criticalCount = {{ critical_cases|length }};
+    const escalatedCount = {{ escalated_cases|length }};
+    
+    if (criticalCount + escalatedCount === 0) {
+        showError('No cases to assign');
+        return;
+    }
+    
+    if (confirm(`Assign all ${criticalCount + escalatedCount} escalated cases to Security Team?`)) {
+        showLoading('Assigning cases...');
+        
+        // Simulate bulk assignment
+        setTimeout(() => {
+            hideLoading();
+            showSuccess('All escalated cases assigned to Security Team');
+            setTimeout(() => location.reload(), 1500);
+        }, 2000);
+    }
+}
+
+function markAllReviewed() {
+    const totalCases = {{ critical_cases|length + escalated_cases|length }};
+    
+    if (totalCases === 0) {
+        showError('No cases to mark as reviewed');
+        return;
+    }
+    
+    if (confirm(`Mark all ${totalCases} escalated cases as reviewed?`)) {
+        showLoading('Updating cases...');
+        
+        // Simulate marking as reviewed
+        setTimeout(() => {
+            hideLoading();
+            showSuccess('All cases marked as reviewed');
+            setTimeout(() => location.reload(), 1500);
+        }, 2000);
+    }
+}
+
+function generateBulkReport() {
+    generateEscalationReport();
+}
+
+function exportEscalations() {
+    showLoading('Preparing export...');
+    
+    // Simulate export
+    setTimeout(() => {
+        hideLoading();
+        showSuccess('Escalation data exported successfully');
+        
+        // In a real implementation, this would trigger a download
+        console.log('Export would be triggered here');
+    }, 1500);
+}
+
+// Auto-refresh every 30 seconds for escalations page
+setInterval(function() {
+    // Only refresh if there are active critical cases
+    const criticalCount = {{ critical_cases|length }};
+    if (criticalCount > 0) {
+        location.reload();
+    }
+}, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Session {{ session.id[:8] }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Upload</a></li>
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h2">
+                <i class="fas fa-tachometer-alt text-primary"></i>
+                Session Dashboard
+            </h1>
+            <div class="session-info">
+                <span class="badge bg-primary fs-6">{{ session.filename }}</span>
+                <span class="badge bg-secondary fs-6">{{ session.upload_time.strftime('%Y-%m-%d %H:%M') if session.upload_time }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processing Status -->
+{% if session.status != 'completed' %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info processing-status {{ session.status }}">
+            <div class="d-flex align-items-center">
+                {% if session.status == 'processing' %}
+                    <i class="fas fa-spinner fa-spin me-2"></i>
+                    <strong>Processing in progress...</strong>
+                    <div class="ms-auto">
+                        {{ session.processed_records or 0 }} / {{ session.total_records or 0 }} records processed
+                    </div>
+                {% elif session.status == 'error' %}
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Processing Error:</strong> {{ session.error_message }}
+                {% else %}
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Status:</strong> {{ session.status.title() }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-primary text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0" id="totalRecords">{{ stats.session_info.total_records or 0 }}</h3>
+                        <p class="mb-0">Total Records</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-database fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-success text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0" id="analyzedRecords">{{ stats.session_info.processed_records or 0 }}</h3>
+                        <p class="mb-0">Analyzed Records</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-danger text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ stats.risk_distribution.Critical or 0 }}</h3>
+                        <p class="mb-0">Critical Cases</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card-body text-white">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0" id="avgRiskScore">{{ "%.3f"|format(ml_insights.average_risk_score or 0) }}</h3>
+                        <p class="mb-0">Avg Risk Score</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-brain fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="row">
+    <!-- ML Insights Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie text-primary"></i>
+                    Risk Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container chart-small">
+                    <canvas id="mlInsightsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Processing Workflow Status -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cogs text-primary"></i>
+                    Processing Workflow
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="workflow-status">
+                    <div class="workflow-step-status d-flex align-items-center mb-3">
+                        <div class="step-icon me-3">
+                            {% if stats.workflow_stages.exclusion_applied %}
+                                <i class="fas fa-check-circle text-success fa-2x"></i>
+                            {% else %}
+                                <i class="fas fa-clock text-warning fa-2x"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Exclusion Rules</h6>
+                            <p class="text-muted mb-0">Filter records based on exclusion criteria</p>
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-step-status d-flex align-items-center mb-3">
+                        <div class="step-icon me-3">
+                            {% if stats.workflow_stages.whitelist_applied %}
+                                <i class="fas fa-check-circle text-success fa-2x"></i>
+                            {% else %}
+                                <i class="fas fa-clock text-warning fa-2x"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Whitelist Filtering</h6>
+                            <p class="text-muted mb-0">Remove trusted domain communications</p>
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-step-status d-flex align-items-center mb-3">
+                        <div class="step-icon me-3">
+                            {% if stats.workflow_stages.rules_applied %}
+                                <i class="fas fa-check-circle text-success fa-2x"></i>
+                            {% else %}
+                                <i class="fas fa-clock text-warning fa-2x"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Security Rules</h6>
+                            <p class="text-muted mb-0">Apply security rules and threat detection</p>
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-step-status d-flex align-items-center">
+                        <div class="step-icon me-3">
+                            {% if stats.workflow_stages.ml_applied %}
+                                <i class="fas fa-check-circle text-success fa-2x"></i>
+                            {% else %}
+                                <i class="fas fa-clock text-warning fa-2x"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h6 class="mb-1">ML Analysis</h6>
+                            <p class="text-muted mb-0">Machine learning anomaly detection</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BAU Analysis and Attachment Risk -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-business-time text-primary"></i>
+                    Business As Usual (BAU) Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4 text-center">
+                        <h4 class="text-primary" id="bauScore">{{ "%.1f"|format(bau_analysis.bau_statistics.bau_score or 0) }}</h4>
+                        <p class="text-muted mb-0">BAU Score</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h4 class="text-success" id="highVolumeComms">{{ bau_analysis.high_volume_pairs|length if bau_analysis.high_volume_pairs else 0 }}</h4>
+                        <p class="text-muted mb-0">High Volume Pairs</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h4 class="text-info">{{ "%.1f"|format((bau_analysis.bau_statistics.external_ratio or 0) * 100) }}%</h4>
+                        <p class="text-muted mb-0">External Ratio</p>
+                    </div>
+                </div>
+                
+                <div class="chart-container chart-small">
+                    <canvas id="bauAnalysisChart"></canvas>
+                </div>
+                
+                {% if bau_analysis.whitelist_recommendations %}
+                <div class="mt-3">
+                    <h6>Top Whitelist Recommendations:</h6>
+                    <div class="row">
+                        {% for rec in bau_analysis.whitelist_recommendations[:3] %}
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 mb-2">
+                                <strong>{{ rec.domain }}</strong><br>
+                                <small class="text-muted">
+                                    {{ rec.communication_count }} communications<br>
+                                    Trust Score: {{ rec.trust_score }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-paperclip text-primary"></i>
+                    Attachment Risk Analytics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Total Attachments:</span>
+                        <span class="fw-bold" id="totalAttachments">{{ attachment_analytics.total_attachments or 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>High Risk:</span>
+                        <span class="fw-bold text-danger" id="highRiskAttachments">{{ attachment_analytics.risk_distribution.high_risk_count or 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Avg Risk Score:</span>
+                        <span class="fw-bold">{{ "%.2f"|format(attachment_analytics.risk_distribution.mean_risk or 0) }}</span>
+                    </div>
+                </div>
+                
+                <div class="chart-container" style="height: 200px;">
+                    <canvas id="attachmentRiskChart"></canvas>
+                </div>
+                
+                {% if attachment_analytics.malware_indicators %}
+                <div class="mt-3">
+                    <h6>Malware Indicators:</h6>
+                    <ul class="list-unstyled">
+                        {% for indicator, count in attachment_analytics.malware_indicators.items() %}
+                        {% if count > 0 %}
+                        <li class="d-flex justify-content-between">
+                            <span>{{ indicator.replace('_', ' ').title() }}:</span>
+                            <span class="badge bg-warning">{{ count }}</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt text-primary"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('cases', session_id=session.id) }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-folder-open"></i><br>
+                            View All Cases
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('escalations', session_id=session.id) }}" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-exclamation-triangle"></i><br>
+                            Critical Escalations
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('sender_analysis', session_id=session.id) }}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-user-friends"></i><br>
+                            Sender Analysis
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('advanced_ml_dashboard', session_id=session.id) }}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-brain"></i><br>
+                            Advanced ML
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Set session ID for JavaScript functions
+window.currentSessionId = '{{ session.id }}';
+
+// Auto-refresh for processing sessions
+{% if session.status == 'processing' %}
+setInterval(function() {
+    location.reload();
+}, 10000); // Refresh every 10 seconds
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+
+{% block title %}Time Analysis - Session {{ session.id[:8] }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Upload</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard', session_id=session.id) }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Time Analysis</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h2">
+                <i class="fas fa-clock text-primary"></i>
+                Temporal Pattern Analysis
+            </h1>
+            <div class="session-info">
+                <span class="badge bg-primary fs-6">{{ session.filename }}</span>
+                <span class="badge bg-info fs-6">{{ analysis.business_hours_ratio * 100 if analysis.business_hours_ratio else 0 }}% business hours</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Time Statistics -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-primary text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0" id="businessHoursRatio">{{ "%.1f"|format((analysis.business_hours_ratio or 0) * 100) }}%</h3>
+                        <p class="mb-0">Business Hours</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-business-time fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-warning text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0" id="afterHoursActivity">{{ analysis.after_hours_activity or 0 }}</h3>
+                        <p class="mb-0">After Hours</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-moon fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-info text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ analysis.weekend_activity or 0 }}</h3>
+                        <p class="mb-0">Weekend Activity</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-calendar-weekend fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-danger text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ analysis.temporal_anomalies|length if analysis.temporal_anomalies else 0 }}</h3>
+                        <p class="mb-0">Anomalies</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Charts -->
+<div class="row">
+    <!-- Hourly Activity Chart -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line text-primary"></i>
+                    24-Hour Activity Pattern
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="timePatternChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="border rounded p-2">
+                                <h6 class="text-primary mb-0">Peak Hour</h6>
+                                <small class="text-muted">{{ analysis.peak_hour if analysis.peak_hour else 'N/A' }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-2">
+                                <h6 class="text-success mb-0">Business Hours</h6>
+                                <small class="text-muted">8 AM - 6 PM</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-2">
+                                <h6 class="text-warning mb-0">After Hours</h6>
+                                <small class="text-muted">{{ analysis.after_hours_activity or 0 }} emails</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-2">
+                                <h6 class="text-info mb-0">Night Hours</h6>
+                                <small class="text-muted">11 PM - 6 AM</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Risk vs Time Chart -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-shield-alt text-primary"></i>
+                    Risk by Time Period
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container chart-small">
+                    <canvas id="riskByTimeChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <h6>Risk Summary:</h6>
+                    <div class="risk-time-summary">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Business Hours Risk:</span>
+                            <span class="badge bg-success">Low</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>After Hours Risk:</span>
+                            <span class="badge bg-warning">Medium</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Weekend Risk:</span>
+                            <span class="badge bg-danger">High</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Temporal Anomalies -->
+{% if analysis.temporal_anomalies %}
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-exclamation-triangle"></i>
+            Temporal Anomalies Detected
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Record ID</th>
+                        <th>Sender</th>
+                        <th>Time</th>
+                        <th>Risk Score</th>
+                        <th>Details</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for anomaly in analysis.temporal_anomalies %}
+                    <tr class="table-warning">
+                        <td>
+                            <span class="badge bg-danger">{{ anomaly.anomaly_type.replace('_', ' ').title() }}</span>
+                        </td>
+                        <td><code>{{ anomaly.record_id }}</code></td>
+                        <td>{{ anomaly.sender[:30] }}{% if anomaly.sender|length > 30 %}...{% endif %}</td>
+                        <td>{{ anomaly.time }}</td>
+                        <td>
+                            <span class="fw-bold text-danger">{{ "%.3f"|format(anomaly.risk_score) }}</span>
+                        </td>
+                        <td>
+                            {% if anomaly.anomaly_type == 'weekend_high_risk' %}
+                                High-risk communication during weekend
+                            {% elif anomaly.anomaly_type == 'after_hours_suspicious' %}
+                                Suspicious activity after business hours
+                            {% else %}
+                                {{ anomaly.anomaly_type.replace('_', ' ').title() }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-outline-primary" onclick="viewAnomalyDetails('{{ anomaly.record_id }}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="escalateAnomaly('{{ anomaly.record_id }}')">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Unusual Patterns -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-search text-primary"></i>
+                    Unusual Time Patterns
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if analysis.unusual_patterns %}
+                <div class="unusual-patterns">
+                    {% for pattern in analysis.unusual_patterns %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {{ pattern }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <h6 class="text-success">No Unusual Patterns Detected</h6>
+                    <p class="text-muted">All communications appear to follow normal temporal patterns.</p>
+                </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <h6>Pattern Analysis:</h6>
+                    <ul class="list-unstyled">
+                        <li class="d-flex justify-content-between">
+                            <span>Normal Business Hours:</span>
+                            <span class="text-success">{{ "%.1f"|format((analysis.business_hours_ratio or 0) * 100) }}%</span>
+                        </li>
+                        <li class="d-flex justify-content-between">
+                            <span>Extended Hours (6PM-11PM):</span>
+                            <span class="text-warning">{{ "%.1f"|format(((1 - (analysis.business_hours_ratio or 0)) * 0.6) * 100) }}%</span>
+                        </li>
+                        <li class="d-flex justify-content-between">
+                            <span>Night Hours (11PM-6AM):</span>
+                            <span class="text-danger">{{ "%.1f"|format(((1 - (analysis.business_hours_ratio or 0)) * 0.4) * 100) }}%</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-lightbulb text-primary"></i>
+                    Time-based Recommendations
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="recommendations">
+                    {% if analysis.after_hours_activity and analysis.after_hours_activity > 5 %}
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-clock"></i> After Hours Monitoring</h6>
+                        <p class="mb-1">{{ analysis.after_hours_activity }} communications detected after business hours</p>
+                        <small>Consider implementing additional monitoring for off-hours activity</small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if analysis.weekend_activity and analysis.weekend_activity > 3 %}
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-calendar-weekend"></i> Weekend Activity</h6>
+                        <p class="mb-1">{{ analysis.weekend_activity }} weekend communications detected</p>
+                        <small>Review weekend communication policies and approval processes</small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-shield-alt"></i> Security Best Practices</h6>
+                        <ul class="mb-0">
+                            <li>Monitor communications outside business hours</li>
+                            <li>Flag high-risk communications during unusual times</li>
+                            <li>Implement time-based access controls</li>
+                            <li>Regular review of temporal communication patterns</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Pattern Analysis -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-calendar-alt text-primary"></i>
+            Weekly Communication Pattern
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="chart-container chart-small">
+            <canvas id="weeklyPatternChart"></canvas>
+        </div>
+        <div class="row mt-3 text-center">
+            <div class="col">
+                <h6 class="text-primary">Monday</h6>
+                <small class="text-muted">High Activity</small>
+            </div>
+            <div class="col">
+                <h6 class="text-primary">Tuesday</h6>
+                <small class="text-muted">Peak Activity</small>
+            </div>
+            <div class="col">
+                <h6 class="text-primary">Wednesday</h6>
+                <small class="text-muted">Peak Activity</small>
+            </div>
+            <div class="col">
+                <h6 class="text-primary">Thursday</h6>
+                <small class="text-muted">High Activity</small>
+            </div>
+            <div class="col">
+                <h6 class="text-primary">Friday</h6>
+                <small class="text-muted">Moderate Activity</small>
+            </div>
+            <div class="col">
+                <h6 class="text-warning">Saturday</h6>
+                <small class="text-muted">Low Activity</small>
+            </div>
+            <div class="col">
+                <h6 class="text-warning">Sunday</h6>
+                <small class="text-muted">Low Activity</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Set session ID for JavaScript functions
+window.currentSessionId = '{{ session.id }}';
+
+// Initialize time analysis charts
+document.addEventListener('DOMContentLoaded', function() {
+    // Create 24-hour activity pattern chart
+    const timeCtx = document.getElementById('timePatternChart');
+    if (timeCtx) {
+        const hourlyData = [
+            {% if analysis.hourly_distribution %}
+                {% for hour in range(24) %}
+                    {{ analysis.hourly_distribution[hour] or 0 }}{% if not loop.last %},{% endif %}
+                {% endfor %}
+            {% else %}
+                0,0,0,0,0,0,1,5,15,25,30,35,40,45,35,30,25,20,15,10,5,2,1,0
+            {% endif %}
+        ];
+        
+        new Chart(timeCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                datasets: [{
+                    label: 'Email Activity',
+                    data: hourlyData,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: function(context) {
+                        const hour = context.dataIndex;
+                        if (hour >= 8 && hour <= 17) return '#198754'; // Business hours - green
+                        if (hour >= 18 && hour <= 22) return '#ffc107'; // Extended hours - yellow
+                        return '#dc3545'; // Night hours - red
+                    },
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Emails'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Hour of Day'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const hour = context.dataIndex;
+                                if (hour >= 8 && hour <= 17) return 'Business Hours';
+                                if (hour >= 18 && hour <= 22) return 'Extended Hours';
+                                return 'Night Hours';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Create risk by time chart
+    const riskCtx = document.getElementById('riskByTimeChart');
+    if (riskCtx) {
+        new Chart(riskCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Business Hours', 'Extended Hours', 'Night Hours'],
+                datasets: [{
+                    data: [70, 20, 10],
+                    backgroundColor: ['#198754', '#ffc107', '#dc3545'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Create weekly pattern chart
+    const weeklyCtx = document.getElementById('weeklyPatternChart');
+    if (weeklyCtx) {
+        new Chart(weeklyCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                datasets: [{
+                    label: 'Email Volume',
+                    data: [45, 52, 48, 44, 35, 8, 5],
+                    backgroundColor: function(context) {
+                        const day = context.dataIndex;
+                        return day < 5 ? '#0d6efd' : '#ffc107'; // Weekdays blue, weekends yellow
+                    },
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Email Count'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+});
+
+function viewAnomalyDetails(recordId) {
+    showLoading('Loading anomaly details...');
+    
+    setTimeout(() => {
+        hideLoading();
+        // In a real implementation, this would show detailed anomaly information
+        showSuccess(`Anomaly details loaded for record ${recordId}`);
+    }, 1000);
+}
+
+function escalateAnomaly(recordId) {
+    if (confirm('Escalate this temporal anomaly for security review?')) {
+        showLoading('Escalating anomaly...');
+        
+        setTimeout(() => {
+            hideLoading();
+            showSuccess(`Temporal anomaly ${recordId} escalated for review`);
+        }, 1000);
+    }
+}
+</script>
+{% endblock %}

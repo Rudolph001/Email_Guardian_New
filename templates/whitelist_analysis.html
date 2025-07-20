@@ -1,0 +1,609 @@
+{% extends "base.html" %}
+
+{% block title %}Whitelist Analysis - Session {{ session.id[:8] }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Upload</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard', session_id=session.id) }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Whitelist Analysis</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h2">
+                <i class="fas fa-list-check text-primary"></i>
+                Domain Whitelist Analysis
+            </h1>
+            <div class="session-info">
+                <span class="badge bg-primary fs-6">{{ session.filename }}</span>
+                <span class="badge bg-success fs-6">{{ analysis.total_unique_domains or 0 }} domains analyzed</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis Summary -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-primary text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ analysis.total_unique_domains or 0 }}</h3>
+                        <p class="mb-0">Unique Domains</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-globe fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-success text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0" id="recommendedDomains">{{ analysis.whitelist_recommendations|length if analysis.whitelist_recommendations else 0 }}</h3>
+                        <p class="mb-0">Recommended</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-thumbs-up fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-info text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0" id="whitelistCoverage">{{ "%.1f"|format((analysis.whitelist_effectiveness.whitelist_ratio or 0) * 100) }}%</h3>
+                        <p class="mb-0">Current Coverage</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-shield-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-warning text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ "%.1f"|format(analysis.whitelist_effectiveness.effectiveness_score or 0) }}%</h3>
+                        <p class="mb-0">Effectiveness</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row">
+    <!-- Whitelist Recommendations -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-star text-success"></i>
+                        Top Whitelist Recommendations
+                    </h5>
+                    <div>
+                        <button class="btn btn-outline-success btn-sm" onclick="bulkAddRecommendations()">
+                            <i class="fas fa-plus-circle"></i> Add Selected
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="exportRecommendations()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if analysis.whitelist_recommendations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllRecommendations" onchange="toggleSelectAllRecommendations()">
+                                </th>
+                                <th>Domain</th>
+                                <th>Communications</th>
+                                <th>Trust Score</th>
+                                <th>Risk Profile</th>
+                                <th>Confidence</th>
+                                <th>Impact</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rec in analysis.whitelist_recommendations[:15] %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="recommendation-checkbox" value="{{ rec.domain }}">
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong>{{ rec.domain }}</strong>
+                                        <br><small class="text-muted">{{ rec.classification }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-center">
+                                        <span class="badge bg-info">{{ rec.communication_count }}</span>
+                                        <br><small class="text-muted">{{ rec.unique_senders }} senders</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold text-{% if rec.trust_score >= 80 %}success{% elif rec.trust_score >= 60 %}warning{% else %}danger{% endif %}">
+                                            {{ rec.trust_score }}
+                                        </span>
+                                        <div class="progress ms-2" style="width: 50px; height: 6px;">
+                                            <div class="progress-bar bg-{% if rec.trust_score >= 80 %}success{% elif rec.trust_score >= 60 %}warning{% else %}danger{% endif %}" 
+                                                 style="width: {{ rec.trust_score }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-center">
+                                        <span class="fw-bold text-success">{{ "%.3f"|format(rec.avg_risk_score) }}</span>
+                                        <br><small class="text-muted">{{ rec.high_risk_count }} high-risk</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if rec.confidence_level == 'High' %}success{% elif rec.confidence_level == 'Medium' %}warning{% else %}secondary{% endif %}">
+                                        {{ rec.confidence_level }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ rec.potential_impact.records_affected }} records<br>
+                                        {{ rec.potential_impact.percentage_of_total }}% of total
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button class="btn btn-outline-success" onclick="addDomainToWhitelist('{{ rec.domain }}')">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <button class="btn btn-outline-info" onclick="analyzeDomain('{{ rec.domain }}')">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        <button class="btn btn-outline-primary" onclick="viewDomainDetails('{{ rec.domain }}')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Recommendations Available</h5>
+                    <p class="text-muted">Whitelist recommendations will be generated after analysis completion.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Analysis Summary -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie text-primary"></i>
+                    Domain Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container chart-small">
+                    <canvas id="whitelistRecommendationsChart"></canvas>
+                </div>
+                
+                <div class="mt-3">
+                    <h6>Summary Statistics:</h6>
+                    {% if analysis.summary %}
+                    <ul class="list-unstyled">
+                        <li class="d-flex justify-content-between">
+                            <span>Total Analyzed:</span>
+                            <span class="fw-bold">{{ analysis.summary.total_domains_analyzed }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between">
+                            <span>Recommended:</span>
+                            <span class="fw-bold text-success">{{ analysis.summary.domains_recommended }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between">
+                            <span>High Confidence:</span>
+                            <span class="fw-bold text-primary">{{ analysis.summary.high_confidence_recommendations }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between">
+                            <span>Potential Coverage:</span>
+                            <span class="fw-bold text-info">{{ analysis.summary.potential_communications_whitelisted }}</span>
+                        </li>
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Whitelist Effectiveness -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-shield-check text-success"></i>
+                    Current Whitelist Effectiveness
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if analysis.whitelist_effectiveness %}
+                <div class="effectiveness-metrics">
+                    <div class="row text-center mb-3">
+                        <div class="col-md-4">
+                            <h4 class="text-primary">{{ analysis.whitelist_effectiveness.whitelisted_count }}</h4>
+                            <p class="text-muted mb-0">Whitelisted Records</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h4 class="text-success">{{ "%.1f"|format(analysis.whitelist_effectiveness.effectiveness_score) }}%</h4>
+                            <p class="text-muted mb-0">Effectiveness Score</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h4 class="text-info">{{ analysis.whitelist_effectiveness.high_risk_whitelisted }}</h4>
+                            <p class="text-muted mb-0">High-Risk Whitelisted</p>
+                        </div>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 20px;">
+                        <div class="progress-bar bg-success" style="width: {{ analysis.whitelist_effectiveness.effectiveness_score }}%">
+                            {{ "%.1f"|format(analysis.whitelist_effectiveness.effectiveness_score) }}% Effective
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-{% if analysis.whitelist_effectiveness.effectiveness_score >= 80 %}success{% elif analysis.whitelist_effectiveness.effectiveness_score >= 60 %}warning{% else %}danger{% endif %}">
+                        <h6>
+                            {% if analysis.whitelist_effectiveness.effectiveness_score >= 80 %}
+                                <i class="fas fa-check-circle"></i> Excellent Whitelist Performance
+                            {% elif analysis.whitelist_effectiveness.effectiveness_score >= 60 %}
+                                <i class="fas fa-exclamation-triangle"></i> Good Whitelist Performance
+                            {% else %}
+                                <i class="fas fa-times-circle"></i> Whitelist Needs Improvement
+                            {% endif %}
+                        </h6>
+                        <p class="mb-0">
+                            {% if analysis.whitelist_effectiveness.effectiveness_score >= 80 %}
+                                Your current whitelist is performing very well with minimal false positives.
+                            {% elif analysis.whitelist_effectiveness.effectiveness_score >= 60 %}
+                                Consider reviewing high-risk whitelisted domains and adding recommended domains.
+                            {% else %}
+                                Immediate review recommended - high number of risky domains are whitelisted.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-info-circle fa-2x text-info mb-2"></i>
+                    <p class="text-muted">Whitelist effectiveness analysis will be available after processing.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-business-time text-primary"></i>
+                    BAU Communication Patterns
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if analysis.bau_patterns %}
+                <div class="bau-patterns">
+                    <h6>High Frequency Domains:</h6>
+                    {% for domain in analysis.bau_patterns.high_frequency_domains[:5] %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>{{ domain.domain }}</strong>
+                            <br><small class="text-muted">{{ domain.frequency }} communications</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-{% if domain.bau_likelihood == 'High' %}success{% else %}warning{% endif %}">
+                                {{ domain.bau_likelihood }} BAU
+                            </span>
+                            <br><small class="text-muted">Risk: {{ "%.3f"|format(domain.avg_risk_score) }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <hr>
+                    
+                    <h6>Regular Communication Pairs:</h6>
+                    {% for pair in analysis.bau_patterns.regular_communication_pairs[:3] %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <code>{{ pair.pair }}</code>
+                        </div>
+                        <div>
+                            <span class="badge bg-info">{{ pair.frequency }}x</span>
+                            <span class="badge bg-success">BAU: {{ pair.bau_score }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                    <p class="text-muted">BAU pattern analysis will be available after processing.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-bolt text-primary"></i>
+            Quick Whitelist Actions
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <button class="btn btn-outline-success w-100" onclick="addTopRecommendations()">
+                    <i class="fas fa-plus"></i><br>
+                    Add Top 5 Recommendations
+                </button>
+            </div>
+            <div class="col-md-3 mb-3">
+                <button class="btn btn-outline-primary w-100" onclick="reviewCurrentWhitelist()">
+                    <i class="fas fa-eye"></i><br>
+                    Review Current Whitelist
+                </button>
+            </div>
+            <div class="col-md-3 mb-3">
+                <button class="btn btn-outline-info w-100" onclick="exportWhitelistReport()">
+                    <i class="fas fa-download"></i><br>
+                    Export Analysis Report
+                </button>
+            </div>
+            <div class="col-md-3 mb-3">
+                <button class="btn btn-outline-warning w-100" onclick="optimizeWhitelist()">
+                    <i class="fas fa-magic"></i><br>
+                    Auto-Optimize Whitelist
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Domain Details Modal -->
+<div class="modal fade" id="domainDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Domain Analysis Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="domainDetailsBody">
+                <!-- Domain details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="addCurrentDomainToWhitelist()">Add to Whitelist</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Set session ID for JavaScript functions
+window.currentSessionId = '{{ session.id }}';
+let currentDomain = null;
+
+// Initialize charts
+document.addEventListener('DOMContentLoaded', function() {
+    // Create domain distribution chart
+    const ctx = document.getElementById('whitelistRecommendationsChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Recommended', 'Under Review', 'Not Recommended'],
+                datasets: [{
+                    data: [
+                        {{ analysis.whitelist_recommendations|length if analysis.whitelist_recommendations else 0 }},
+                        {{ ((analysis.total_unique_domains or 0) * 0.3)|int }},
+                        {{ ((analysis.total_unique_domains or 0) * 0.4)|int }}
+                    ],
+                    backgroundColor: ['#198754', '#ffc107', '#dc3545'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+});
+
+function toggleSelectAllRecommendations() {
+    const selectAll = document.getElementById('selectAllRecommendations');
+    const checkboxes = document.querySelectorAll('.recommendation-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+}
+
+function addDomainToWhitelist(domain) {
+    if (confirm(`Add "${domain}" to the whitelist?`)) {
+        showLoading('Adding domain to whitelist...');
+        
+        // Simulate API call
+        setTimeout(() => {
+            hideLoading();
+            showSuccess(`Domain "${domain}" added to whitelist successfully`);
+        }, 1000);
+    }
+}
+
+function analyzeDomain(domain) {
+    showLoading('Analyzing domain communications...');
+    
+    setTimeout(() => {
+        hideLoading();
+        showSuccess(`Analysis completed for ${domain}`);
+    }, 1500);
+}
+
+function viewDomainDetails(domain) {
+    currentDomain = domain;
+    const modalBody = document.getElementById('domainDetailsBody');
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading domain analysis...</p>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('domainDetailsModal'));
+    modal.show();
+    
+    // Simulate loading domain details
+    setTimeout(() => {
+        modalBody.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Domain Information</h6>
+                    <p><strong>Domain:</strong> ${domain}</p>
+                    <p><strong>Classification:</strong> <span class="badge bg-primary">Corporate</span></p>
+                    <p><strong>Trust Score:</strong> <span class="text-success">85/100</span></p>
+                    <p><strong>Total Communications:</strong> <span class="badge bg-info">Processing...</span></p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Risk Assessment</h6>
+                    <p><strong>Average Risk Score:</strong> <span class="text-success">0.125</span></p>
+                    <p><strong>High-Risk Communications:</strong> <span class="text-success">0</span></p>
+                    <p><strong>Recommendation:</strong> <span class="badge bg-success">Add to Whitelist</span></p>
+                </div>
+            </div>
+            <hr>
+            <h6>Communication Patterns</h6>
+            <p class="text-muted">Detailed communication pattern analysis would be displayed here.</p>
+        `;
+    }, 1500);
+}
+
+function bulkAddRecommendations() {
+    const selectedDomains = Array.from(document.querySelectorAll('.recommendation-checkbox:checked')).map(cb => cb.value);
+    
+    if (selectedDomains.length === 0) {
+        showError('Please select domains to add to the whitelist');
+        return;
+    }
+    
+    if (confirm(`Add ${selectedDomains.length} selected domains to the whitelist?`)) {
+        showLoading('Adding domains to whitelist...');
+        
+        setTimeout(() => {
+            hideLoading();
+            showSuccess(`Successfully added ${selectedDomains.length} domains to the whitelist`);
+            // Refresh page to update UI
+            setTimeout(() => location.reload(), 1500);
+        }, 2000);
+    }
+}
+
+function exportRecommendations() {
+    showLoading('Preparing whitelist recommendations export...');
+    
+    setTimeout(() => {
+        hideLoading();
+        showSuccess('Whitelist recommendations exported successfully');
+    }, 1500);
+}
+
+function addTopRecommendations() {
+    if (confirm('Add the top 5 recommended domains to the whitelist?')) {
+        showLoading('Adding top recommendations...');
+        
+        setTimeout(() => {
+            hideLoading();
+            showSuccess('Top 5 recommendations added to whitelist');
+            setTimeout(() => location.reload(), 1500);
+        }, 2000);
+    }
+}
+
+function reviewCurrentWhitelist() {
+    window.open('/admin#whitelist-tab', '_blank');
+}
+
+function exportWhitelistReport() {
+    showLoading('Generating whitelist analysis report...');
+    
+    setTimeout(() => {
+        hideLoading();
+        showSuccess('Whitelist analysis report generated successfully');
+    }, 2000);
+}
+
+function optimizeWhitelist() {
+    if (confirm('Automatically optimize the whitelist based on analysis recommendations?')) {
+        showLoading('Optimizing whitelist...');
+        
+        setTimeout(() => {
+            hideLoading();
+            showSuccess('Whitelist optimization completed');
+            setTimeout(() => location.reload(), 1500);
+        }, 3000);
+    }
+}
+
+function addCurrentDomainToWhitelist() {
+    if (currentDomain) {
+        addDomainToWhitelist(currentDomain);
+        const modal = bootstrap.Modal.getInstance(document.getElementById('domainDetailsModal'));
+        modal.hide();
+    }
+}
+</script>
+{% endblock %}

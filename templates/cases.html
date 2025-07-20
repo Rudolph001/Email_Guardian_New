@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Case Management - Session {{ session.id[:8] }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Upload</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard', session_id=session.id) }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Cases</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h2">
+                <i class="fas fa-folder-open text-primary"></i>
+                Case Management
+            </h1>
+            <div class="session-info">
+                <span class="badge bg-primary fs-6">{{ session.filename }}</span>
+                <span class="badge bg-info fs-6">{{ cases.total }} total cases</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+    <form method="GET" id="filterForm" class="row g-3">
+        <div class="col-md-3">
+            <label for="risk_level" class="form-label">Risk Level</label>
+            <select class="form-select" id="risk_level" name="risk_level">
+                <option value="">All Levels</option>
+                <option value="Critical" {% if risk_level == 'Critical' %}selected{% endif %}>Critical</option>
+                <option value="High" {% if risk_level == 'High' %}selected{% endif %}>High</option>
+                <option value="Medium" {% if risk_level == 'Medium' %}selected{% endif %}>Medium</option>
+                <option value="Low" {% if risk_level == 'Low' %}selected{% endif %}>Low</option>
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+            <label for="case_status" class="form-label">Case Status</label>
+            <select class="form-select" id="case_status" name="case_status">
+                <option value="">All Statuses</option>
+                <option value="Active" {% if case_status == 'Active' %}selected{% endif %}>Active</option>
+                <option value="Cleared" {% if case_status == 'Cleared' %}selected{% endif %}>Cleared</option>
+                <option value="Escalated" {% if case_status == 'Escalated' %}selected{% endif %}>Escalated</option>
+            </select>
+        </div>
+        
+        <div class="col-md-4">
+            <label for="search" class="form-label">Search</label>
+            <input type="text" class="form-control" id="search" name="search" 
+                   placeholder="Search sender, subject, or domain..." value="{{ search }}">
+        </div>
+        
+        <div class="col-md-2">
+            <label class="form-label">&nbsp;</label>
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center border-danger">
+            <div class="card-body">
+                <h4 class="text-danger">{{ cases.items | selectattr('risk_level', 'equalto', 'Critical') | list | length }}</h4>
+                <p class="text-muted mb-0">Critical Cases</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-warning">
+            <div class="card-body">
+                <h4 class="text-warning">{{ cases.items | selectattr('risk_level', 'equalto', 'High') | list | length }}</h4>
+                <p class="text-muted mb-0">High Risk Cases</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-primary">
+            <div class="card-body">
+                <h4 class="text-primary">{{ cases.items | selectattr('case_status', 'equalto', 'Active') | list | length }}</h4>
+                <p class="text-muted mb-0">Active Cases</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-success">
+            <div class="card-body">
+                <h4 class="text-success">{{ cases.items | selectattr('case_status', 'equalto', 'Escalated') | list | length }}</h4>
+                <p class="text-muted mb-0">Escalated Cases</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cases Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list text-primary"></i>
+                Email Cases
+            </h5>
+            <div class="bulk-actions">
+                <button class="btn btn-sm btn-outline-secondary" onclick="selectAllCases()">
+                    <i class="fas fa-check-double"></i> Select All
+                </button>
+                <button class="btn btn-sm btn-outline-warning" onclick="bulkClearCases()" disabled id="bulkClearBtn">
+                    <i class="fas fa-check"></i> Clear Selected
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="bulkEscalateCases()" disabled id="bulkEscalateBtn">
+                    <i class="fas fa-exclamation-triangle"></i> Escalate Selected
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if cases.items %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="casesTable">
+                <thead>
+                    <tr>
+                        <th width="30">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        </th>
+                        <th>Sender</th>
+                        <th>Subject</th>
+                        <th>Recipient Domain</th>
+                        <th>Risk Level</th>
+                        <th>ML Score</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in cases.items %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="case-checkbox" value="{{ case.record_id }}" onchange="updateBulkActions()">
+                        </td>
+                        <td>
+                            <div>
+                                <strong>{{ case.sender[:30] }}{% if case.sender|length > 30 %}...{% endif %}</strong>
+                                {% if case.leaver and case.leaver.lower() in ['yes', 'true', '1'] %}
+                                    <span class="badge bg-warning">Leaver</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div title="{{ case.subject }}">
+                                {{ case.subject[:50] }}{% if case.subject|length > 50 %}...{% endif %}
+                            </div>
+                            {% if case.attachments %}
+                                <small class="text-muted">
+                                    <i class="fas fa-paperclip"></i> Has attachments
+                                </small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">{{ case.recipients_email_domain }}</span>
+                        </td>
+                        <td>
+                            <span class="risk-{{ case.risk_level.lower() if case.risk_level else 'low' }}">
+                                {{ case.risk_level or 'Low' }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span class="fw-bold">{{ "%.3f"|format(case.ml_risk_score or 0) }}</span>
+                                <div class="progress ms-2" style="width: 60px; height: 6px;">
+                                    <div class="progress-bar bg-{% if (case.ml_risk_score or 0) > 0.7 %}danger{% elif (case.ml_risk_score or 0) > 0.4 %}warning{% else %}success{% endif %}" 
+                                         style="width: {{ ((case.ml_risk_score or 0) * 100)|int }}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge status-{{ case.case_status.lower() if case.case_status else 'active' }}">
+                                {{ case.case_status or 'Active' }}
+                            </span>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ case.time[:16] if case.time else 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-primary view-case-btn" 
+                                        data-record-id="{{ case.record_id }}" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-success update-case-status-btn" 
+                                        data-record-id="{{ case.record_id }}" data-new-status="Cleared" title="Clear Case">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger escalate-case-btn" 
+                                        data-record-id="{{ case.record_id }}" title="Escalate">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if cases.pages > 1 %}
+        <nav aria-label="Cases pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if cases.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('cases', session_id=session.id, page=cases.prev_num, risk_level=risk_level, case_status=case_status, search=search) }}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in cases.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != cases.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('cases', session_id=session.id, page=page_num, risk_level=risk_level, case_status=case_status, search=search) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if cases.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('cases', session_id=session.id, page=cases.next_num, risk_level=risk_level, case_status=case_status, search=search) }}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No cases found</h5>
+            <p class="text-muted">Try adjusting your search criteria or filters.</p>
+            <a href="{{ url_for('cases', session_id=session.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-refresh"></i> Clear Filters
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Set session ID for JavaScript functions
+window.currentSessionId = '{{ session.id }}';
+
+// Bulk actions functionality
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.case-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    
+    updateBulkActions();
+}
+
+function selectAllCases() {
+    document.getElementById('selectAll').checked = true;
+    toggleSelectAll();
+}
+
+function updateBulkActions() {
+    const selectedCases = document.querySelectorAll('.case-checkbox:checked');
+    const bulkClearBtn = document.getElementById('bulkClearBtn');
+    const bulkEscalateBtn = document.getElementById('bulkEscalateBtn');
+    
+    const hasSelection = selectedCases.length > 0;
+    bulkClearBtn.disabled = !hasSelection;
+    bulkEscalateBtn.disabled = !hasSelection;
+    
+    if (hasSelection) {
+        bulkClearBtn.innerHTML = `<i class="fas fa-check"></i> Clear Selected (${selectedCases.length})`;
+        bulkEscalateBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Escalate Selected (${selectedCases.length})`;
+    } else {
+        bulkClearBtn.innerHTML = '<i class="fas fa-check"></i> Clear Selected';
+        bulkEscalateBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Escalate Selected';
+    }
+}
+
+function bulkClearCases() {
+    const selectedCases = document.querySelectorAll('.case-checkbox:checked');
+    if (selectedCases.length === 0) return;
+    
+    if (confirm(`Clear ${selectedCases.length} selected case(s)?`)) {
+        selectedCases.forEach(checkbox => {
+            updateCaseStatus(currentSessionId, checkbox.value, 'Cleared');
+        });
+    }
+}
+
+function bulkEscalateCases() {
+    const selectedCases = document.querySelectorAll('.case-checkbox:checked');
+    if (selectedCases.length === 0) return;
+    
+    if (confirm(`Escalate ${selectedCases.length} selected case(s)?`)) {
+        selectedCases.forEach(checkbox => {
+            updateCaseStatus(currentSessionId, checkbox.value, 'Escalated');
+        });
+    }
+}
+
+// Enhanced search functionality
+document.getElementById('search').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('filterForm').submit();
+    }
+});
+
+// Auto-save filter preferences
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filterForm');
+    const formInputs = filterForm.querySelectorAll('select, input');
+    
+    formInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Auto-submit form on filter change (except search which uses debounce)
+            if (this.id !== 'search') {
+                setTimeout(() => filterForm.submit(), 100);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

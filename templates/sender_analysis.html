@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+
+{% block title %}Sender Analysis - Session {{ session.id[:8] }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Upload</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard', session_id=session.id) }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Sender Analysis</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h2">
+                <i class="fas fa-user-friends text-primary"></i>
+                Sender Behavior Analysis
+            </h1>
+            <div class="session-info">
+                <span class="badge bg-primary fs-6">{{ session.filename }}</span>
+                <span class="badge bg-info fs-6">{{ analysis.total_senders or 0 }} senders analyzed</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-primary text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0" id="totalSenders">{{ analysis.total_senders or 0 }}</h3>
+                        <p class="mb-0">Total Senders</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-danger text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0" id="highRiskSenders">{{ analysis.summary_statistics.high_risk_senders or 0 }}</h3>
+                        <p class="mb-0">High Risk Senders</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-warning text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ analysis.summary_statistics.external_focused_senders or 0 }}</h3>
+                        <p class="mb-0">External Focused</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-external-link-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card bg-gradient-success text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ "%.1f"|format(analysis.summary_statistics.avg_emails_per_sender or 0) }}</h3>
+                        <p class="mb-0">Avg Emails/Sender</p>
+                    </div>
+                    <div class="ms-auto">
+                        <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Analysis Content -->
+<div class="row">
+    <!-- Sender Behavior Chart -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-scatter text-primary"></i>
+                    Sender Risk vs Communication Volume
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="senderBehaviorChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        Each point represents a sender. X-axis shows total emails sent, Y-axis shows average risk score.
+                        Hover over points to see sender details.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Risk Distribution -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-pie-chart text-primary"></i>
+                    Sender Risk Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container chart-small">
+                    <canvas id="senderRiskDistributionChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>High Risk Senders:</span>
+                        <span class="fw-bold text-danger">{{ analysis.summary_statistics.high_risk_senders or 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>External Focused:</span>
+                        <span class="fw-bold text-warning">{{ analysis.summary_statistics.external_focused_senders or 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Attachment Senders:</span>
+                        <span class="fw-bold text-info">{{ analysis.summary_statistics.attachment_senders or 0 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Risk Senders Table -->
+<div class="card mb-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-user-shield text-danger"></i>
+                High Risk Senders
+            </h5>
+            <button class="btn btn-outline-primary btn-sm" onclick="exportSenderAnalysis()">
+                <i class="fas fa-download"></i> Export Analysis
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if analysis.sender_profiles %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Sender</th>
+                        <th>Total Emails</th>
+                        <th>Risk Score</th>
+                        <th>External Ratio</th>
+                        <th>Domains Contacted</th>
+                        <th>Behavior Flags</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sender, profile in analysis.sender_profiles.items()[:20] %}
+                    <tr>
+                        <td>
+                            <strong>{{ sender[:30] }}{% if sender|length > 30 %}...{% endif %}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ profile.total_emails }}</span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span class="fw-bold {% if profile.risk_score_avg > 0.7 %}text-danger{% elif profile.risk_score_avg > 0.4 %}text-warning{% else %}text-success{% endif %}">
+                                    {{ "%.3f"|format(profile.risk_score_avg) }}
+                                </span>
+                                <div class="progress ms-2" style="width: 60px; height: 6px;">
+                                    <div class="progress-bar bg-{% if profile.risk_score_avg > 0.7 %}danger{% elif profile.risk_score_avg > 0.4 %}warning{% else %}success{% endif %}" 
+                                         style="width: {{ (profile.risk_score_avg * 100)|int }}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="{% if profile.external_ratio > 0.8 %}text-danger{% elif profile.external_ratio > 0.5 %}text-warning{% else %}text-success{% endif %}">
+                                {{ "%.1f"|format(profile.external_ratio * 100) }}%
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ profile.domains_contacted|length if profile.domains_contacted else 0 }}</span>
+                        </td>
+                        <td>
+                            {% if profile.behavior_flags %}
+                                {% for flag in profile.behavior_flags[:2] %}
+                                    <span class="badge bg-warning">{{ flag }}</span><br>
+                                {% endfor %}
+                                {% if profile.behavior_flags|length > 2 %}
+                                    <small class="text-muted">+{{ profile.behavior_flags|length - 2 }} more</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">None</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-outline-primary" onclick="viewSenderDetails('{{ sender }}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-info" onclick="analyzeSenderCommunications('{{ sender }}')">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                {% if profile.risk_score_avg > 0.6 %}
+                                <button class="btn btn-outline-danger" onclick="flagSender('{{ sender }}')">
+                                    <i class="fas fa-flag"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-user-friends fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No Sender Data Available</h5>
+            <p class="text-muted">Sender analysis will be available after processing is complete.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Communication Patterns -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-network-wired text-primary"></i>
+                    Communication Patterns
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container chart-small">
+                    <canvas id="communicationPatternsChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <h6>Pattern Analysis:</h6>
+                    <ul class="list-unstyled">
+                        <li class="d-flex justify-content-between">
+                            <span>High Volume Senders:</span>
+                            <span class="fw-bold">{{ analysis.sender_profiles.values()|selectattr('total_emails', 'gt', 10)|list|length if analysis.sender_profiles else 0 }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between">
+                            <span>Multi-Domain Communicators:</span>
+                            <span class="fw-bold">{{ analysis.sender_profiles.values()|selectattr('domains_contacted', 'defined')|selectattr('domains_contacted', 'length', 5)|list|length if analysis.sender_profiles else 0 }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between">
+                            <span>Suspicious Patterns:</span>
+                            <span class="fw-bold text-warning">{{ analysis.sender_profiles.values()|selectattr('behavior_flags', 'defined')|selectattr('behavior_flags', 'length', 1)|list|length if analysis.sender_profiles else 0 }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-list text-primary"></i>
+                    Risk Recommendations
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="recommendations">
+                    {% if analysis.sender_profiles %}
+                        {% set high_risk_senders = analysis.sender_profiles.values()|selectattr('risk_score_avg', 'gt', 0.7)|list %}
+                        {% set external_senders = analysis.sender_profiles.values()|selectattr('external_ratio', 'gt', 0.8)|list %}
+                        
+                        {% if high_risk_senders %}
+                        <div class="alert alert-danger">
+                            <h6><i class="fas fa-exclamation-triangle"></i> High Priority</h6>
+                            <p class="mb-1">{{ high_risk_senders|length }} senders have high risk scores (>0.7)</p>
+                            <small>Immediate review recommended for security assessment</small>
+                        </div>
+                        {% endif %}
+                        
+                        {% if external_senders %}
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-external-link-alt"></i> External Communication</h6>
+                            <p class="mb-1">{{ external_senders|length }} senders primarily communicate externally</p>
+                            <small>Review external communication policies and monitoring</small>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-shield-alt"></i> Security Recommendations</h6>
+                            <ul class="mb-0">
+                                <li>Monitor high-volume external communicators</li>
+                                <li>Review senders with multiple domain contacts</li>
+                                <li>Implement additional controls for flagged behavior patterns</li>
+                                <li>Regular review of sender risk scores and trends</li>
+                            </ul>
+                        </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-info-circle fa-2x text-info mb-2"></i>
+                        <p class="text-muted">Recommendations will be available after analysis completion</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sender Details Modal -->
+<div class="modal fade" id="senderDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sender Analysis Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="senderDetailsBody">
+                <!-- Sender details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="exportSenderReport()">Export Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Set session ID for JavaScript functions
+window.currentSessionId = '{{ session.id }}';
+
+// Initialize sender analysis charts
+document.addEventListener('DOMContentLoaded', function() {
+    // Create sender risk distribution chart
+    const riskCtx = document.getElementById('senderRiskDistributionChart');
+    if (riskCtx) {
+        new Chart(riskCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+                datasets: [{
+                    data: [
+                        {{ analysis.summary_statistics.high_risk_senders or 0 }},
+                        {{ (analysis.total_senders or 0) - (analysis.summary_statistics.high_risk_senders or 0) - ((analysis.total_senders or 0) * 0.3)|int }},
+                        {{ ((analysis.total_senders or 0) * 0.3)|int }}
+                    ],
+                    backgroundColor: ['#dc3545', '#ffc107', '#198754'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Create communication patterns chart
+    const patternsCtx = document.getElementById('communicationPatternsChart');
+    if (patternsCtx) {
+        new Chart(patternsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['High Volume', 'External Focus', 'Multi-Domain', 'Attachments', 'Flagged'],
+                datasets: [{
+                    label: 'Sender Count',
+                    data: [
+                        {{ analysis.sender_profiles.values()|selectattr('total_emails', 'gt', 10)|list|length if analysis.sender_profiles else 0 }},
+                        {{ analysis.summary_statistics.external_focused_senders or 0 }},
+                        {{ analysis.sender_profiles.values()|selectattr('domains_contacted', 'defined')|selectattr('domains_contacted', 'length', 5)|list|length if analysis.sender_profiles else 0 }},
+                        {{ analysis.summary_statistics.attachment_senders or 0 }},
+                        {{ analysis.sender_profiles.values()|selectattr('behavior_flags', 'defined')|selectattr('behavior_flags', 'length', 1)|list|length if analysis.sender_profiles else 0 }}
+                    ],
+                    backgroundColor: ['#0d6efd', '#fd7e14', '#20c997', '#6f42c1', '#dc3545'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+});
+
+function viewSenderDetails(senderEmail) {
+    const modalBody = document.getElementById('senderDetailsBody');
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading sender details...</p>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('senderDetailsModal'));
+    modal.show();
+    
+    // Simulate loading sender details
+    setTimeout(() => {
+        modalBody.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Sender Information</h6>
+                    <p><strong>Email:</strong> ${senderEmail}</p>
+                    <p><strong>Total Communications:</strong> <span class="badge bg-info">Processing...</span></p>
+                    <p><strong>Risk Assessment:</strong> <span class="text-warning">Analyzing...</span></p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Communication Patterns</h6>
+                    <p><strong>External Ratio:</strong> Calculating...</p>
+                    <p><strong>Domains Contacted:</strong> Analyzing...</p>
+                    <p><strong>Behavior Flags:</strong> None detected</p>
+                </div>
+            </div>
+            <hr>
+            <h6>Recent Activity</h6>
+            <p class="text-muted">Detailed sender activity analysis would be displayed here in a complete implementation.</p>
+        `;
+    }, 1500);
+}
+
+function analyzeSenderCommunications(senderEmail) {
+    showLoading('Analyzing sender communications...');
+    
+    setTimeout(() => {
+        hideLoading();
+        showSuccess(`Communication analysis completed for ${senderEmail}`);
+    }, 2000);
+}
+
+function flagSender(senderEmail) {
+    if (confirm(`Flag ${senderEmail} for additional security review?`)) {
+        showLoading('Flagging sender...');
+        
+        setTimeout(() => {
+            hideLoading();
+            showSuccess(`Sender ${senderEmail} has been flagged for review`);
+        }, 1000);
+    }
+}
+
+function exportSenderAnalysis() {
+    showLoading('Preparing sender analysis export...');
+    
+    setTimeout(() => {
+        hideLoading();
+        showSuccess('Sender analysis exported successfully');
+    }, 2000);
+}
+
+function exportSenderReport() {
+    showLoading('Generating sender report...');
+    
+    setTimeout(() => {
+        hideLoading();
+        showSuccess('Sender report generated successfully');
+        const modal = bootstrap.Modal.getInstance(document.getElementById('senderDetailsModal'));
+        modal.hide();
+    }, 1500);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}Email Guardian - Upload CSV{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Upload</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Welcome Card -->
+        <div class="card shadow-custom fade-in">
+            <div class="card-header bg-gradient-primary text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-shield-alt"></i>
+                    Welcome to Email Guardian
+                </h2>
+            </div>
+            <div class="card-body">
+                <p class="lead">
+                    Upload your Tessian email export CSV files for comprehensive security analysis with AI-powered threat detection.
+                </p>
+                
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-robot fa-3x text-primary mb-3"></i>
+                            <h5>AI-Powered Analysis</h5>
+                            <p class="text-muted">Machine learning anomaly detection and risk scoring</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                            <h5>Advanced Analytics</h5>
+                            <p class="text-muted">Comprehensive dashboards and reporting</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-gavel fa-3x text-warning mb-3"></i>
+                            <h5>Policy Engine</h5>
+                            <p class="text-muted">Customizable rules and exclusion filters</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Upload Card -->
+        <div class="card shadow-custom slide-in-right">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-upload"></i>
+                    Upload Tessian Email Export
+                </h4>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <!-- File Upload Area -->
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <div class="file-upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h4>Drop CSV file here or click to browse</h4>
+                        <p class="text-muted">
+                            Maximum file size: 500MB<br>
+                            Supported format: CSV with Tessian email export structure
+                        </p>
+                        <input type="file" id="fileInput" name="file" accept=".csv" style="display: none;" required>
+                    </div>
+                    
+                    <!-- File Info -->
+                    <div id="fileInfo"></div>
+                    
+                    <!-- Expected Columns Info -->
+                    <div class="mt-4">
+                        <h6>Expected CSV Columns:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <ul class="list-unstyled">
+                                        <li><code>_time</code> - Email timestamp</li>
+                                        <li><code>sender</code> - Sender email address</li>
+                                        <li><code>subject</code> - Email subject</li>
+                                        <li><code>attachments</code> - Attachment information</li>
+                                        <li><code>recipients</code> - Recipient information</li>
+                                        <li><code>recipients_email_domain</code> - Recipient domains</li>
+                                        <li><code>leaver</code> - Leaver status</li>
+                                        <li><code>termination_date</code> - Termination date</li>
+                                    </ul>
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <ul class="list-unstyled">
+                                        <li><code>wordlist_attachment</code> - Attachment keywords</li>
+                                        <li><code>wordlist_subject</code> - Subject keywords</li>
+                                        <li><code>bunit</code> - Business unit</li>
+                                        <li><code>department</code> - Department</li>
+                                        <li><code>status</code> - Email status</li>
+                                        <li><code>user_response</code> - User response</li>
+                                        <li><code>final_outcome</code> - Final outcome</li>
+                                        <li><code>justification</code> - Justification text</li>
+                                    </ul>
+                                </small>
+                            </div>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> Column matching is case-insensitive. Missing columns will be handled gracefully.
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Button -->
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn" disabled>
+                            <i class="fas fa-upload"></i>
+                            Upload and Process
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Processing Progress -->
+                <div id="uploadProgress" style="display: none;">
+                    <div class="mt-4">
+                        <h6>Processing...</h6>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%" id="progressBar">0%</div>
+                        </div>
+                        <small class="text-muted" id="progressText">Uploading file...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Sessions -->
+        {% if recent_sessions %}
+        <div class="card shadow-custom">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-history"></i>
+                    Recent Processing Sessions
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Filename</th>
+                                <th>Upload Time</th>
+                                <th>Total Records</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in recent_sessions %}
+                            <tr>
+                                <td>
+                                    <code>{{ session.id[:8] }}...</code>
+                                </td>
+                                <td>{{ session.filename }}</td>
+                                <td>{{ session.upload_time.strftime('%Y-%m-%d %H:%M') if session.upload_time }}</td>
+                                <td>
+                                    {% if session.total_records %}
+                                        <span class="badge bg-info">{{ session.total_records }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.status == 'completed' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i> Completed
+                                        </span>
+                                    {% elif session.status == 'processing' %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-spinner fa-spin"></i> Processing
+                                        </span>
+                                    {% elif session.status == 'error' %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-exclamation-triangle"></i> Error
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ session.status.title() }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.status == 'completed' %}
+                                        <a href="{{ url_for('dashboard', session_id=session.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-chart-line"></i> View Dashboard
+                                        </a>
+                                    {% elif session.status == 'error' %}
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="showErrorDetails('{{ session.id }}', '{{ session.error_message or "Unknown error" }}')">
+                                            <i class="fas fa-exclamation-circle"></i> View Error
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted">Processing...</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Processing Workflow -->
+        <div class="card shadow-custom">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-cogs"></i>
+                    4-Step Processing Workflow
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="workflow-step">
+                            <div class="step-number">1</div>
+                            <i class="fas fa-filter fa-2x text-primary mb-2"></i>
+                            <h6>Exclusion Rules</h6>
+                            <p class="small text-muted">Filter records based on configurable exclusion criteria</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="workflow-step">
+                            <div class="step-number">2</div>
+                            <i class="fas fa-list-check fa-2x text-success mb-2"></i>
+                            <h6>Whitelist Filtering</h6>
+                            <p class="small text-muted">Remove trusted domain communications</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="workflow-step">
+                            <div class="step-number">3</div>
+                            <i class="fas fa-gavel fa-2x text-warning mb-2"></i>
+                            <h6>Rule Engine</h6>
+                            <p class="small text-muted">Apply security rules and mark rule matches as Critical</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="workflow-step">
+                            <div class="step-number">4</div>
+                            <i class="fas fa-brain fa-2x text-info mb-2"></i>
+                            <h6>ML Analysis</h6>
+                            <p class="small text-muted">Score remaining records with anomaly detection</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Details Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                    Processing Error
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Session:</strong> <span id="errorSessionId"></span></p>
+                <p><strong>Error Message:</strong></p>
+                <pre id="errorMessage" class="bg-light p-3 rounded"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function showErrorDetails(sessionId, errorMessage) {
+    document.getElementById('errorSessionId').textContent = sessionId;
+    document.getElementById('errorMessage').textContent = errorMessage;
+    
+    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+    errorModal.show();
+}
+
+// Upload form handling
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files.length) {
+        alert('Please select a file to upload.');
+        return;
+    }
+    
+    // Show progress
+    document.getElementById('uploadProgress').style.display = 'block';
+    document.getElementById('uploadBtn').disabled = true;
+    
+    // Create FormData and submit
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.text();
+        }
+    })
+    .then(html => {
+        if (html) {
+            document.body.innerHTML = html;
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        alert('Upload failed. Please try again.');
+        document.getElementById('uploadProgress').style.display = 'none';
+        document.getElementById('uploadBtn').disabled = false;
+    });
+});
+</script>
+
+<style>
+.workflow-step {
+    padding: 1rem;
+    position: relative;
+}
+
+.step-number {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.feature-icon {
+    padding: 2rem 1rem;
+    transition: transform 0.2s ease;
+}
+
+.feature-icon:hover {
+    transform: translateY(-5px);
+}
+</style>
+{% endblock %}
