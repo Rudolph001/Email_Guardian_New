@@ -16,7 +16,7 @@ class DataProcessor:
     """Handles CSV processing and workflow engine"""
     
     def __init__(self):
-        self.chunk_size = 2500
+        self.chunk_size = 500  # Reduced for better responsiveness
         self.session_manager = SessionManager()
         self.rule_engine = RuleEngine()
         self.domain_manager = DomainManager()
@@ -54,15 +54,15 @@ class DataProcessor:
             processed_count = 0
             
             # Process file in smaller chunks for better performance
-            chunk_size = min(1000, self.chunk_size)  # Use smaller chunks for responsiveness
+            chunk_size = min(250, self.chunk_size)  # Use smaller chunks for responsiveness
             
             # Process file in chunks
             for chunk_df in pd.read_csv(file_path, chunksize=chunk_size):
                 try:
                     processed_count += self._process_chunk(session_id, chunk_df, column_mapping, processed_count)
                     
-                    # Update progress less frequently for performance
-                    if processed_count % 500 == 0:  # Update every 500 records
+                    # Update progress more frequently for better UX
+                    if processed_count % 100 == 0:  # Update every 100 records
                         if session:
                             session.processed_records = processed_count
                             db.session.commit()
@@ -192,9 +192,14 @@ class DataProcessor:
                     db.session.add(error)
                     logger.warning(f"Error processing record at index {index}: {str(e)}")
             
-            # Commit chunk
-            db.session.commit()
-            logger.info(f"Processed chunk: {processed_count} records")
+            # Commit chunk with error handling
+            try:
+                db.session.commit()
+                logger.info(f"Processed chunk: {processed_count} records")
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Error committing chunk: {str(e)}")
+                raise
             return processed_count
             
         except Exception as e:

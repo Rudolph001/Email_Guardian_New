@@ -36,24 +36,24 @@ def upload_file():
         if 'file' not in request.files:
             flash('No file selected', 'error')
             return redirect(url_for('index'))
-        
+
         file = request.files['file']
         if file.filename == '':
             flash('No file selected', 'error')
             return redirect(url_for('index'))
-        
+
         if not file.filename.lower().endswith('.csv'):
             flash('Please upload a CSV file', 'error')
             return redirect(url_for('index'))
-        
+
         # Create new session
         session_id = str(uuid.uuid4())
         filename = file.filename
-        
+
         # Save uploaded file
         upload_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session_id}_{filename}")
         file.save(upload_path)
-        
+
         # Create session record
         session = ProcessingSession(
             id=session_id,
@@ -62,31 +62,32 @@ def upload_file():
         )
         db.session.add(session)
         db.session.commit()
-        
+
         # Process the file asynchronously (start processing and redirect immediately)
         flash(f'File uploaded successfully. Processing started. Session ID: {session_id}', 'success')
-        
-        # Start processing in background (for now, we'll process synchronously but optimize it)
+
+        # Start processing in background with proper Flask context
         try:
             # Quick validation only
             import threading
             def background_processing():
-                try:
-                    data_processor.process_csv(session_id, upload_path)
-                    logger.info(f"Background processing completed for session {session_id}")
-                except Exception as e:
-                    logger.error(f"Background processing error for session {session_id}: {str(e)}")
-                    session = ProcessingSession.query.get(session_id)
-                    if session:
-                        session.status = 'error'
-                        session.error_message = str(e)
-                        db.session.commit()
-            
+                with app.app_context():  # Create Flask application context
+                    try:
+                        data_processor.process_csv(session_id, upload_path)
+                        logger.info(f"Background processing completed for session {session_id}")
+                    except Exception as e:
+                        logger.error(f"Background processing error for session {session_id}: {str(e)}")
+                        session = ProcessingSession.query.get(session_id)
+                        if session:
+                            session.status = 'error'
+                            session.error_message = str(e)
+                            db.session.commit()
+
             # Start background thread
             thread = threading.Thread(target=background_processing)
             thread.daemon = True
             thread.start()
-            
+
             return redirect(url_for('dashboard', session_id=session_id))
         except Exception as e:
             logger.error(f"Processing initialization error for session {session_id}: {str(e)}")
@@ -95,7 +96,7 @@ def upload_file():
             db.session.commit()
             flash(f'Error starting processing: {str(e)}', 'error')
             return redirect(url_for('index'))
-            
+
     except Exception as e:
         logger.error(f"Upload error: {str(e)}")
         flash(f'Upload failed: {str(e)}', 'error')
@@ -117,39 +118,39 @@ def processing_status(session_id):
 def dashboard(session_id):
     """Main dashboard with processing statistics and ML insights"""
     session = ProcessingSession.query.get_or_404(session_id)
-    
+
     # If still processing, show processing view
     if session.status in ['uploaded', 'processing']:
         return render_template('processing.html', session=session)
-    
+
     # Get processing statistics
     try:
         stats = session_manager.get_processing_stats(session_id)
     except Exception as e:
         logger.warning(f"Could not get processing stats: {str(e)}")
         stats = {}
-    
+
     # Get ML insights
     try:
         ml_insights = ml_engine.get_insights(session_id)
     except Exception as e:
         logger.warning(f"Could not get ML insights: {str(e)}")
         ml_insights = {}
-    
+
     # Get BAU analysis
     try:
         bau_analysis = advanced_ml_engine.analyze_bau_patterns(session_id)
     except Exception as e:
         logger.warning(f"Could not get BAU analysis: {str(e)}")
         bau_analysis = {}
-    
+
     # Get attachment risk analytics
     try:
         attachment_analytics = advanced_ml_engine.analyze_attachment_risks(session_id)
     except Exception as e:
         logger.warning(f"Could not get attachment analytics: {str(e)}")
         attachment_analytics = {}
-    
+
     return render_template('dashboard.html', 
                          session=session, 
                          stats=stats,
@@ -161,16 +162,16 @@ def dashboard(session_id):
 def cases(session_id):
     """Case management page with advanced filtering"""
     session = ProcessingSession.query.get_or_404(session_id)
-    
+
     # Get filter parameters
     page = request.args.get('page', 1, type=int)
     risk_level = request.args.get('risk_level', '')
     case_status = request.args.get('case_status', '')
     search = request.args.get('search', '')
-    
+
     # Build query with filters
     query = EmailRecord.query.filter_by(session_id=session_id)
-    
+
     if risk_level:
         query = query.filter(EmailRecord.risk_level == risk_level)
     if case_status:
@@ -183,12 +184,12 @@ def cases(session_id):
                 EmailRecord.recipients_email_domain.contains(search)
             )
         )
-    
+
     # Apply sorting and pagination
     cases_pagination = query.order_by(EmailRecord.ml_risk_score.desc()).paginate(
         page=page, per_page=50, error_out=False
     )
-    
+
     return render_template('cases.html', 
                          session=session,
                          cases=cases_pagination,
@@ -200,18 +201,18 @@ def cases(session_id):
 def escalations(session_id):
     """Escalation dashboard for critical cases"""
     session = ProcessingSession.query.get_or_404(session_id)
-    
+
     # Get critical and escalated cases
     critical_cases = EmailRecord.query.filter_by(
         session_id=session_id,
         risk_level='Critical'
     ).order_by(EmailRecord.ml_risk_score.desc()).all()
-    
+
     escalated_cases = EmailRecord.query.filter_by(
         session_id=session_id,
         case_status='Escalated'
     ).order_by(EmailRecord.escalated_at.desc()).all()
-    
+
     return render_template('escalations.html',
                          session=session,
                          critical_cases=critical_cases,
@@ -222,7 +223,7 @@ def sender_analysis(session_id):
     """Sender behavior analysis dashboard"""
     session = ProcessingSession.query.get_or_404(session_id)
     analysis = advanced_ml_engine.analyze_sender_behavior(session_id)
-    
+
     return render_template('sender_analysis.html',
                          session=session,
                          analysis=analysis)
@@ -232,7 +233,7 @@ def time_analysis(session_id):
     """Temporal pattern analysis dashboard"""
     session = ProcessingSession.query.get_or_404(session_id)
     analysis = advanced_ml_engine.analyze_temporal_patterns(session_id)
-    
+
     return render_template('time_analysis.html',
                          session=session,
                          analysis=analysis)
@@ -242,7 +243,7 @@ def whitelist_analysis(session_id):
     """Domain whitelist recommendations dashboard"""
     session = ProcessingSession.query.get_or_404(session_id)
     analysis = domain_manager.analyze_whitelist_recommendations(session_id)
-    
+
     return render_template('whitelist_analysis.html',
                          session=session,
                          analysis=analysis)
@@ -252,7 +253,7 @@ def advanced_ml_dashboard(session_id):
     """Advanced ML insights and pattern recognition"""
     session = ProcessingSession.query.get_or_404(session_id)
     insights = advanced_ml_engine.get_advanced_insights(session_id)
-    
+
     return render_template('advanced_ml_dashboard.html',
                          session=session,
                          insights=insights)
@@ -263,7 +264,7 @@ def admin():
     sessions = ProcessingSession.query.order_by(ProcessingSession.upload_time.desc()).all()
     whitelist_domains = WhitelistDomain.query.filter_by(is_active=True).all()
     attachment_keywords = AttachmentKeyword.query.filter_by(is_active=True).all()
-    
+
     return render_template('admin.html',
                          sessions=sessions,
                          whitelist_domains=whitelist_domains,
@@ -274,7 +275,7 @@ def rules():
     """Rules management interface"""
     security_rules = Rule.query.filter_by(rule_type='security', is_active=True).all()
     exclusion_rules = Rule.query.filter_by(rule_type='exclusion', is_active=True).all()
-    
+
     return render_template('rules.html',
                          security_rules=security_rules,
                          exclusion_rules=exclusion_rules)
@@ -302,7 +303,7 @@ def api_attachment_risk_analytics(session_id):
 def api_case_details(session_id, record_id):
     """Get individual case details"""
     case = EmailRecord.query.filter_by(session_id=session_id, record_id=record_id).first_or_404()
-    
+
     case_data = {
         'record_id': case.record_id,
         'sender': case.sender,
@@ -318,7 +319,7 @@ def api_case_details(session_id, record_id):
         'justification': case.justification,
         'time': case.time
     }
-    
+
     return jsonify(case_data)
 
 @app.route('/api/exclusion-rules', methods=['GET', 'POST'])
@@ -334,7 +335,7 @@ def api_exclusion_rules():
             'actions': rule.actions,
             'priority': rule.priority
         } for rule in rules])
-    
+
     elif request.method == 'POST':
         data = request.get_json()
         rule = Rule(
@@ -353,7 +354,7 @@ def api_exclusion_rules():
 def api_exclusion_rule(rule_id):
     """Get, update, or delete specific exclusion rule"""
     rule = Rule.query.get_or_404(rule_id)
-    
+
     if request.method == 'GET':
         return jsonify({
             'id': rule.id,
@@ -364,7 +365,7 @@ def api_exclusion_rule(rule_id):
             'priority': rule.priority,
             'is_active': rule.is_active
         })
-    
+
     elif request.method == 'PUT':
         data = request.get_json()
         rule.name = data.get('name', rule.name)
@@ -375,7 +376,7 @@ def api_exclusion_rule(rule_id):
         rule.updated_at = datetime.utcnow()
         db.session.commit()
         return jsonify({'status': 'updated'})
-    
+
     elif request.method == 'DELETE':
         rule.is_active = False
         db.session.commit()
@@ -423,11 +424,11 @@ def create_rule():
             'actions': json.loads(request.form.get('actions', '{}')),
             'priority': int(request.form.get('priority', 1))
         }
-        
+
         rule = Rule(**rule_data)
         db.session.add(rule)
         db.session.commit()
-        
+
         flash(f'Rule "{rule.name}" created successfully', 'success')
         return redirect(url_for('rules'))
     except Exception as e:
@@ -440,15 +441,15 @@ def update_case_status(session_id, record_id):
     try:
         case = EmailRecord.query.filter_by(session_id=session_id, record_id=record_id).first_or_404()
         data = request.get_json()
-        
+
         case.case_status = data.get('status', case.case_status)
         case.notes = data.get('notes', case.notes)
-        
+
         if data.get('status') == 'Escalated':
             case.escalated_at = datetime.utcnow()
         elif data.get('status') == 'Cleared':
             case.resolved_at = datetime.utcnow()
-        
+
         db.session.commit()
         return jsonify({'status': 'updated'})
     except Exception as e:
