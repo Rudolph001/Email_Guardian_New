@@ -101,6 +101,32 @@
     </div>
 </div>
 
+<!-- Whitelist Statistics -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card text-center border-info">
+            <div class="card-body">
+                <h4 class="text-info">{{ total_whitelisted }}</h4>
+                <p class="text-muted mb-0">Whitelisted Records</p>
+                <small class="text-muted">Excluded from case review</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-center border-secondary">
+            <div class="card-body">
+                <h4 class="text-secondary">{{ active_whitelist_domains }}</h4>
+                <p class="text-muted mb-0">Active Whitelist Domains</p>
+                <small class="text-muted">
+                    <a href="{{ url_for('whitelist_analysis', session_id=session.id) }}" class="text-decoration-none">
+                        <i class="fas fa-cog"></i> Manage Whitelist
+                    </a>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Cases Table -->
 <div class="card">
     <div class="card-header">

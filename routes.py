@@ -192,12 +192,21 @@ def cases(session_id):
         page=page, per_page=50, error_out=False
     )
 
+    # Get whitelist statistics
+    total_whitelisted = EmailRecord.query.filter_by(session_id=session_id).filter(
+        EmailRecord.whitelisted == True
+    ).count()
+    
+    active_whitelist_domains = WhitelistDomain.query.filter_by(is_active=True).count()
+
     return render_template('cases.html', 
                          session=session,
                          cases=cases_pagination,
                          risk_level=risk_level,
                          case_status=case_status,
-                         search=search)
+                         search=search,
+                         total_whitelisted=total_whitelisted,
+                         active_whitelist_domains=active_whitelist_domains)
 
 @app.route('/escalations/<session_id>')
 def escalations(session_id):

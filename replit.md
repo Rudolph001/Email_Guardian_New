@@ -134,4 +134,5 @@ email-guardian/
   - Main cases view (`/cases/<session_id>`)
   - Escalations dashboard (`/escalations/<session_id>`)
   - Sender details API (`/api/sender_details/<session_id>/<sender_email>`)
+- **Whitelist Statistics**: Added whitelist domain counts to case management interface
 - **Deployment Optimization**: Configured application for proper Replit hosting with gunicorn
