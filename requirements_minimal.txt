@@ -1,4 +1,0 @@
-# Minimal requirements for basic functionality
-flask
-flask-sqlalchemy
-waitress
