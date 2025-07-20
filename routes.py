@@ -169,8 +169,10 @@ def cases(session_id):
     case_status = request.args.get('case_status', '')
     search = request.args.get('search', '')
 
-    # Build query with filters
-    query = EmailRecord.query.filter_by(session_id=session_id)
+    # Build query with filters - exclude whitelisted records from cases
+    query = EmailRecord.query.filter_by(session_id=session_id).filter(
+        EmailRecord.whitelisted != True
+    )
 
     if risk_level:
         query = query.filter(EmailRecord.risk_level == risk_level)
@@ -202,15 +204,19 @@ def escalations(session_id):
     """Escalation dashboard for critical cases"""
     session = ProcessingSession.query.get_or_404(session_id)
 
-    # Get critical and escalated cases
+    # Get critical and escalated cases - exclude whitelisted records
     critical_cases = EmailRecord.query.filter_by(
         session_id=session_id,
         risk_level='Critical'
+    ).filter(
+        EmailRecord.whitelisted != True
     ).order_by(EmailRecord.ml_risk_score.desc()).all()
 
     escalated_cases = EmailRecord.query.filter_by(
         session_id=session_id,
         case_status='Escalated'
+    ).filter(
+        EmailRecord.whitelisted != True
     ).order_by(EmailRecord.escalated_at.desc()).all()
 
     return render_template('escalations.html',
@@ -539,10 +545,12 @@ def api_sender_details(session_id, sender_email):
         if not sender_data:
             return jsonify({'error': 'Sender not found in analysis'}), 404
             
-        # Get recent communications for this sender
+        # Get recent communications for this sender - exclude whitelisted records
         recent_records = EmailRecord.query.filter_by(
             session_id=session_id,
             sender=sender_email
+        ).filter(
+            EmailRecord.whitelisted != True
         ).order_by(EmailRecord.id.desc()).limit(5).all()
         
         recent_activity = []

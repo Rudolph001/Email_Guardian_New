@@ -123,3 +123,15 @@ email-guardian/
 **Modular ML Pipeline**: Separate engines for basic and advanced analytics allow for scalable complexity based on analysis requirements.
 
 **Flexible Rule System**: JSON-based rule configuration with runtime evaluation supports complex business logic without code changes.
+
+## Recent Changes
+
+### July 20, 2025 - Migration to Replit Environment
+- **Database Migration**: Migrated from SQLite to PostgreSQL for Replit deployment
+- **Security Enhancement**: Updated Flask configuration to use SESSION_SECRET environment variable
+- **Whitelist Bug Fix**: Fixed critical issue where whitelisted domains were still appearing in case management views
+- **Case Filtering**: Added proper filtering to exclude whitelisted records from:
+  - Main cases view (`/cases/<session_id>`)
+  - Escalations dashboard (`/escalations/<session_id>`)
+  - Sender details API (`/api/sender_details/<session_id>/<sender_email>`)
+- **Deployment Optimization**: Configured application for proper Replit hosting with gunicorn
