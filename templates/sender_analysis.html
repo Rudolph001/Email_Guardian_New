@@ -178,7 +178,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for sender, profile in analysis.sender_profiles.items()[:20] %}
+                    {% for sender, profile in (analysis.sender_profiles.items() | list)[:20] %}
                     <tr>
                         <td>
                             <strong>{{ sender[:30] }}{% if sender|length > 30 %}...{% endif %}</strong>
@@ -296,6 +296,10 @@
                         {% set high_risk_senders = analysis.sender_profiles.values()|selectattr('risk_score_avg', 'gt', 0.7)|list %}
                         {% set external_senders = analysis.sender_profiles.values()|selectattr('external_ratio', 'gt', 0.8)|list %}
                         
+                        {% if analysis.sender_profiles %}
+                        {% set high_risk_senders = analysis.sender_profiles.values()|selectattr('risk_score_avg', 'gt', 0.7)|list %}
+                        {% set external_senders = analysis.sender_profiles.values()|selectattr('external_ratio', 'gt', 0.8)|list %}
+                        
                         {% if high_risk_senders %}
                         <div class="alert alert-danger">
                             <h6><i class="fas fa-exclamation-triangle"></i> High Priority</h6>
@@ -310,6 +314,7 @@
                             <p class="mb-1">{{ external_senders|length }} senders primarily communicate externally</p>
                             <small>Review external communication policies and monitoring</small>
                         </div>
+                        {% endif %}
                         {% endif %}
                         
                         <div class="alert alert-info">

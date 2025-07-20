@@ -222,7 +222,33 @@ def escalations(session_id):
 def sender_analysis(session_id):
     """Sender behavior analysis dashboard"""
     session = ProcessingSession.query.get_or_404(session_id)
-    analysis = advanced_ml_engine.analyze_sender_behavior(session_id)
+    
+    try:
+        analysis = advanced_ml_engine.analyze_sender_behavior(session_id)
+        if not analysis or 'error' in analysis:
+            # Provide default empty analysis structure
+            analysis = {
+                'total_senders': 0,
+                'sender_profiles': {},
+                'summary_statistics': {
+                    'high_risk_senders': 0,
+                    'external_focused_senders': 0,
+                    'attachment_senders': 0,
+                    'avg_emails_per_sender': 0
+                }
+            }
+    except Exception as e:
+        logger.error(f"Error in sender analysis: {str(e)}")
+        analysis = {
+            'total_senders': 0,
+            'sender_profiles': {},
+            'summary_statistics': {
+                'high_risk_senders': 0,
+                'external_focused_senders': 0,
+                'attachment_senders': 0,
+                'avg_emails_per_sender': 0
+            }
+        }
 
     return render_template('sender_analysis.html',
                          session=session,

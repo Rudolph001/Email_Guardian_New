@@ -162,7 +162,7 @@ class AdvancedMLEngine:
             
             return {
                 'total_senders': len(sender_analysis),
-                'sender_profiles': dict(sorted_senders[:50]),  # Top 50 risky senders
+                'sender_profiles': dict(sorted_senders[:50]) if sorted_senders else {},  # Top 50 risky senders
                 'summary_statistics': self._calculate_sender_summary_stats(sender_analysis)
             }
             
