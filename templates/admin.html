@@ -157,6 +157,59 @@
     </div>
 </div>
 
+<!-- Whitelist Management -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Whitelist Domains
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="whitelistDomains">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading whitelist domains...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cogs me-2"></i>
+                    Rules Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('rules') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-shield-virus me-2"></i>
+                        Security Rules
+                    </a>
+                    <a href="{{ url_for('rules') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-filter me-2"></i>
+                        Exclusion Rules
+                    </a>
+                    <button class="btn btn-outline-info" onclick="loadMLKeywords()">
+                        <i class="fas fa-brain me-2"></i>
+                        ML Keywords
+                    </button>
+                </div>
+                <div id="mlKeywordsContainer" style="display: none;" class="mt-3">
+                    <div id="mlKeywords"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Recent Sessions -->
 <div class="row">
     <div class="col-12">
@@ -304,5 +357,9 @@ function showAlert(message, type) {
         alertDiv.remove();
     }, 3000);
 }
+
+function loadMLKeywords() {
+        showAlert('ML Keywords Loaded!', 'success');
+    }
 </script>
 {% endblock %}
