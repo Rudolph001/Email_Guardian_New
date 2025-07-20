@@ -270,11 +270,11 @@
                         </li>
                         <li class="d-flex justify-content-between">
                             <span>Multi-Domain Communicators:</span>
-                            <span class="fw-bold">{{ analysis.sender_profiles.values()|selectattr('domains_contacted', 'defined')|select('domains_contacted')|select('length')|list|length if analysis.sender_profiles else 0 }}</span>
+                            <span class="fw-bold">{{ analysis.sender_profiles.values()|selectattr('domains_contacted')|list|length if analysis.sender_profiles else 0 }}</span>
                         </li>
                         <li class="d-flex justify-content-between">
                             <span>Suspicious Patterns:</span>
-                            <span class="fw-bold text-warning">{{ analysis.sender_profiles.values()|selectattr('behavior_flags', 'defined')|selectattr('behavior_flags', 'length', 1)|list|length if analysis.sender_profiles else 0 }}</span>
+                            <span class="fw-bold text-warning">{{ analysis.sender_profiles.values()|selectattr('behavior_flags')|list|length if analysis.sender_profiles else 0 }}</span>
                         </li>
                     </ul>
                 </div>
@@ -407,9 +407,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: [
                         {{ analysis.sender_profiles.values()|selectattr('total_emails', 'gt', 10)|list|length if analysis.sender_profiles else 0 }},
                         {{ analysis.summary_statistics.external_focused_senders or 0 }},
-                        {{ analysis.sender_profiles.values()|selectattr('domains_contacted', 'defined')|selectattr('domains_contacted', 'length', 5)|list|length if analysis.sender_profiles else 0 }},
+                        {{ analysis.sender_profiles.values()|selectattr('domains_contacted')|list|length if analysis.sender_profiles else 0 }},
                         {{ analysis.summary_statistics.attachment_senders or 0 }},
-                        {{ analysis.sender_profiles.values()|selectattr('behavior_flags', 'defined')|selectattr('behavior_flags', 'length', 1)|list|length if analysis.sender_profiles else 0 }}
+                        {{ analysis.sender_profiles.values()|selectattr('behavior_flags')|list|length if analysis.sender_profiles else 0 }}
                     ],
                     backgroundColor: ['#0d6efd', '#fd7e14', '#20c997', '#6f42c1', '#dc3545'],
                     borderWidth: 1

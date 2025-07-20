@@ -185,7 +185,7 @@
                 {% if insights.justification_analysis %}
                 <div class="sentiment-breakdown">
                     <div class="text-center mb-3">
-                        <h4 class="text-primary">{{ insights.justification_analysis.total_justifications }}</h4>
+                        <h4 class="text-primary">{{ insights.justification_analysis.get('total_justifications', 0) if insights.justification_analysis else 0 }}</h4>
                         <p class="text-muted mb-0">Total Justifications Analyzed</p>
                     </div>
                     
@@ -193,33 +193,33 @@
                         <div class="mb-3">
                             <div class="d-flex justify-content-between">
                                 <span>Positive Sentiment</span>
-                                <span class="fw-bold">{{ insights.justification_analysis.positive_sentiment }}</span>
+                                <span class="fw-bold">{{ insights.justification_analysis.get('positive_sentiment', 0) if insights.justification_analysis else 0 }}</span>
                             </div>
                             <div class="progress" style="height: 8px;">
                                 <div class="progress-bar bg-success" 
-                                     style="width: {{ (insights.justification_analysis.positive_sentiment / insights.justification_analysis.total_justifications * 100) if insights.justification_analysis.total_justifications > 0 else 0 }}%"></div>
+                                     style="width: {{ (insights.justification_analysis.get('positive_sentiment', 0) / insights.justification_analysis.get('total_justifications', 1) * 100) if insights.justification_analysis and insights.justification_analysis.get('total_justifications', 0) > 0 else 0 }}%"></div>
                             </div>
                         </div>
                         
                         <div class="mb-3">
                             <div class="d-flex justify-content-between">
                                 <span>Negative Sentiment</span>
-                                <span class="fw-bold">{{ insights.justification_analysis.negative_sentiment }}</span>
+                                <span class="fw-bold">{{ insights.justification_analysis.get('negative_sentiment', 0) if insights.justification_analysis else 0 }}</span>
                             </div>
                             <div class="progress" style="height: 8px;">
                                 <div class="progress-bar bg-danger" 
-                                     style="width: {{ (insights.justification_analysis.negative_sentiment / insights.justification_analysis.total_justifications * 100) if insights.justification_analysis.total_justifications > 0 else 0 }}%"></div>
+                                     style="width: {{ (insights.justification_analysis.get('negative_sentiment', 0) / insights.justification_analysis.get('total_justifications', 1) * 100) if insights.justification_analysis and insights.justification_analysis.get('total_justifications', 0) > 0 else 0 }}%"></div>
                             </div>
                         </div>
                         
                         <div class="mb-3">
                             <div class="d-flex justify-content-between">
                                 <span>Neutral Sentiment</span>
-                                <span class="fw-bold">{{ insights.justification_analysis.neutral_sentiment }}</span>
+                                <span class="fw-bold">{{ insights.justification_analysis.get('neutral_sentiment', 0) if insights.justification_analysis else 0 }}</span>
                             </div>
                             <div class="progress" style="height: 8px;">
                                 <div class="progress-bar bg-secondary" 
-                                     style="width: {{ (insights.justification_analysis.neutral_sentiment / insights.justification_analysis.total_justifications * 100) if insights.justification_analysis.total_justifications > 0 else 0 }}%"></div>
+                                     style="width: {{ (insights.justification_analysis.get('neutral_sentiment', 0) / insights.justification_analysis.get('total_justifications', 1) * 100) if insights.justification_analysis and insights.justification_analysis.get('total_justifications', 0) > 0 else 0 }}%"></div>
                             </div>
                         </div>
                     </div>
