@@ -614,6 +614,121 @@ def api_toggle_exclusion_rule(rule_id):
     db.session.commit()
     return jsonify({'status': 'toggled', 'is_active': rule.is_active})
 
+@app.route('/api/whitelist-domains', methods=['GET', 'POST'])
+def api_whitelist_domains():
+    """Get all whitelist domains or create new one"""
+    if request.method == 'GET':
+        domains = WhitelistDomain.query.order_by(WhitelistDomain.added_at.desc()).all()
+        return jsonify([{
+            'id': domain.id,
+            'domain': domain.domain,
+            'domain_type': domain.domain_type,
+            'added_by': domain.added_by,
+            'added_at': domain.added_at.isoformat() if domain.added_at else None,
+            'notes': domain.notes,
+            'is_active': domain.is_active
+        } for domain in domains])
+
+    elif request.method == 'POST':
+        try:
+            data = request.get_json()
+            domain = data.get('domain', '').strip().lower()
+            
+            if not domain:
+                return jsonify({'success': False, 'message': 'Domain is required'}), 400
+            
+            # Check if domain already exists
+            existing = WhitelistDomain.query.filter_by(domain=domain).first()
+            if existing:
+                return jsonify({'success': False, 'message': f'Domain {domain} already exists'}), 400
+            
+            whitelist_domain = WhitelistDomain(
+                domain=domain,
+                domain_type=data.get('domain_type', 'Corporate'),
+                added_by=data.get('added_by', 'Admin'),
+                notes=data.get('notes', '')
+            )
+            
+            db.session.add(whitelist_domain)
+            db.session.commit()
+            
+            logger.info(f"Added whitelist domain: {domain}")
+            return jsonify({'success': True, 'message': f'Domain {domain} added successfully', 'id': whitelist_domain.id})
+            
+        except Exception as e:
+            logger.error(f"Error adding whitelist domain: {str(e)}")
+            db.session.rollback()
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/whitelist-domains/<int:domain_id>', methods=['GET', 'PUT', 'DELETE'])
+def api_whitelist_domain(domain_id):
+    """Get, update, or delete specific whitelist domain"""
+    domain = WhitelistDomain.query.get_or_404(domain_id)
+
+    if request.method == 'GET':
+        return jsonify({
+            'id': domain.id,
+            'domain': domain.domain,
+            'domain_type': domain.domain_type,
+            'added_by': domain.added_by,
+            'added_at': domain.added_at.isoformat() if domain.added_at else None,
+            'notes': domain.notes,
+            'is_active': domain.is_active
+        })
+
+    elif request.method == 'PUT':
+        try:
+            data = request.get_json()
+            
+            domain.domain_type = data.get('domain_type', domain.domain_type)
+            domain.notes = data.get('notes', domain.notes)
+            
+            db.session.commit()
+            
+            logger.info(f"Updated whitelist domain: {domain.domain}")
+            return jsonify({'success': True, 'message': 'Domain updated successfully'})
+            
+        except Exception as e:
+            logger.error(f"Error updating whitelist domain {domain_id}: {str(e)}")
+            db.session.rollback()
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    elif request.method == 'DELETE':
+        try:
+            domain_name = domain.domain
+            db.session.delete(domain)
+            db.session.commit()
+            
+            logger.info(f"Deleted whitelist domain: {domain_name}")
+            return jsonify({'success': True, 'message': f'Domain {domain_name} deleted successfully'})
+            
+        except Exception as e:
+            logger.error(f"Error deleting whitelist domain {domain_id}: {str(e)}")
+            db.session.rollback()
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/whitelist-domains/<int:domain_id>/toggle', methods=['POST'])
+def api_toggle_whitelist_domain(domain_id):
+    """Toggle whitelist domain active status"""
+    try:
+        domain = WhitelistDomain.query.get_or_404(domain_id)
+        domain.is_active = not domain.is_active
+        db.session.commit()
+        
+        status = 'activated' if domain.is_active else 'deactivated'
+        logger.info(f"Domain {domain.domain} {status}")
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Domain {domain.domain} {status} successfully',
+            'is_active': domain.is_active
+        })
+        
+    except Exception as e:
+        logger.error(f"Error toggling whitelist domain {domain_id}: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/admin/whitelist', methods=['POST'])
 def admin_update_whitelist():
     """Update whitelist domains"""
