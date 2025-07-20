@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Processing - Session {{ session.id[:8] }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{{ url_for('index') }}">Upload</a></li>
+<li class="breadcrumb-item active">Processing</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-cogs me-2"></i>
+                        <h5 class="mb-0">Processing Email Data</h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Processing...</span>
+                        </div>
+                        <h4 class="mt-3" id="statusText">{{ session.status.title() }}...</h4>
+                        <p class="text-muted">Session ID: <code>{{ session.id }}</code></p>
+                    </div>
+                    
+                    <div class="progress mb-4" style="height: 25px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             id="progressBar"
+                             style="width: 0%"
+                             aria-valuenow="0" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            <span id="progressText">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="row text-center mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-primary" id="processedCount">{{ session.processed_records or 0 }}</h5>
+                            <p class="text-muted mb-0">Records Processed</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-info" id="totalCount">{{ session.total_records or 'Calculating...' }}</h5>
+                            <p class="text-muted mb-0">Total Records</p>
+                        </div>
+                    </div>
+                    
+                    <div class="processing-stages">
+                        <h6>Processing Workflow:</h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="stage-item" id="stage-exclusion">
+                                    <i class="fas fa-filter stage-icon"></i>
+                                    <small>Exclusion Rules</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stage-item" id="stage-whitelist">
+                                    <i class="fas fa-list-check stage-icon"></i>
+                                    <small>Whitelist Filter</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stage-item" id="stage-rules">
+                                    <i class="fas fa-gavel stage-icon"></i>
+                                    <small>Rule Engine</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stage-item" id="stage-ml">
+                                    <i class="fas fa-brain stage-icon"></i>
+                                    <small>ML Analysis</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-4">
+                        <h6><i class="fas fa-info-circle"></i> What's happening?</h6>
+                        <ul class="mb-0">
+                            <li>Analyzing email communication patterns</li>
+                            <li>Applying security rules and filters</li>
+                            <li>Running machine learning threat detection</li>
+                            <li>Building insights and recommendations</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button class="btn btn-outline-primary" onclick="location.reload()">
+                            <i class="fas fa-sync-alt"></i> Refresh Status
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-arrow-left"></i> Back to Upload
+                        </a>
+                    </div>
+                    
+                    <!-- Error display -->
+                    <div id="errorAlert" class="alert alert-danger mt-4" style="display: none;">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Processing Error</h6>
+                        <p id="errorMessage" class="mb-0"></p>
+                        <div class="mt-2">
+                            <button class="btn btn-danger btn-sm" onclick="location.reload()">
+                                <i class="fas fa-redo"></i> Retry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stage-item {
+    text-align: center;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background: #f8f9fa;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stage-item.active {
+    background: #e7f3ff;
+    border: 2px solid #007bff;
+}
+
+.stage-item.completed {
+    background: #d4edda;
+    border: 2px solid #28a745;
+}
+
+.stage-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #6c757d;
+}
+
+.stage-item.active .stage-icon {
+    color: #007bff;
+}
+
+.stage-item.completed .stage-icon {
+    color: #28a745;
+}
+</style>
+
+<script>
+function checkProcessingStatus() {
+    fetch(`/api/processing-status/{{ session.id }}`)
+        .then(response => response.json())
+        .then(data => {
+            // Update progress bar
+            const progressPercent = data.progress_percent || 0;
+            document.getElementById('progressBar').style.width = progressPercent + '%';
+            document.getElementById('progressBar').setAttribute('aria-valuenow', progressPercent);
+            document.getElementById('progressText').textContent = progressPercent + '%';
+            
+            // Update counters
+            document.getElementById('processedCount').textContent = data.processed_records || 0;
+            if (data.total_records > 0) {
+                document.getElementById('totalCount').textContent = data.total_records;
+            }
+            
+            // Update status
+            document.getElementById('statusText').textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1) + '...';
+            
+            // Handle completion
+            if (data.status === 'completed') {
+                window.location.href = `/dashboard/{{ session.id }}`;
+            }
+            
+            // Handle errors
+            if (data.status === 'error') {
+                document.getElementById('errorAlert').style.display = 'block';
+                document.getElementById('errorMessage').textContent = data.error_message || 'An unknown error occurred';
+                clearInterval(statusInterval);
+            }
+            
+            // Update stage indicators (basic version)
+            updateStageIndicators(data);
+        })
+        .catch(error => {
+            console.error('Error checking status:', error);
+        });
+}
+
+function updateStageIndicators(data) {
+    // Simple stage progression based on progress
+    const progress = data.progress_percent || 0;
+    
+    if (progress > 0) {
+        document.getElementById('stage-exclusion').classList.add('active');
+    }
+    if (progress > 25) {
+        document.getElementById('stage-exclusion').classList.add('completed');
+        document.getElementById('stage-whitelist').classList.add('active');
+    }
+    if (progress > 50) {
+        document.getElementById('stage-whitelist').classList.add('completed');
+        document.getElementById('stage-rules').classList.add('active');
+    }
+    if (progress > 75) {
+        document.getElementById('stage-rules').classList.add('completed');
+        document.getElementById('stage-ml').classList.add('active');
+    }
+    if (progress >= 100) {
+        document.getElementById('stage-ml').classList.add('completed');
+    }
+}
+
+// Start checking status immediately and every 2 seconds
+checkProcessingStatus();
+const statusInterval = setInterval(checkProcessingStatus, 2000);
+
+// Clean up interval when page is unloaded
+window.addEventListener('beforeunload', function() {
+    clearInterval(statusInterval);
+});
+</script>
+{% endblock %}

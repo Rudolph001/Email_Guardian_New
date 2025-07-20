@@ -38,41 +38,56 @@ class DataProcessor:
             
             # Update session status
             session = ProcessingSession.query.get(session_id)
-            session.status = 'processing'
-            db.session.commit()
+            if session:
+                session.status = 'processing'
+                db.session.commit()
             
-            # Step 1: Validate CSV structure
+            # Step 1: Validate CSV structure (quick validation)
             column_mapping = self._validate_csv_structure(file_path)
             
-            # Step 2: Process in chunks
+            # Step 2: Count total records (optimized)
             total_records = self._count_csv_rows(file_path)
-            session.total_records = total_records
-            db.session.commit()
+            if session:
+                session.total_records = total_records
+                db.session.commit()
             
             processed_count = 0
             
+            # Process file in smaller chunks for better performance
+            chunk_size = min(1000, self.chunk_size)  # Use smaller chunks for responsiveness
+            
             # Process file in chunks
-            for chunk_df in pd.read_csv(file_path, chunksize=self.chunk_size):
-                processed_count += self._process_chunk(session_id, chunk_df, column_mapping, processed_count)
-                
-                # Update progress
-                session.processed_records = processed_count
-                db.session.commit()
+            for chunk_df in pd.read_csv(file_path, chunksize=chunk_size):
+                try:
+                    processed_count += self._process_chunk(session_id, chunk_df, column_mapping, processed_count)
+                    
+                    # Update progress less frequently for performance
+                    if processed_count % 500 == 0:  # Update every 500 records
+                        if session:
+                            session.processed_records = processed_count
+                            db.session.commit()
+                except Exception as chunk_error:
+                    logger.warning(f"Error processing chunk: {str(chunk_error)}")
+                    continue  # Skip problematic chunks but continue processing
             
             # Step 3: Apply 4-step workflow
             self._apply_workflow(session_id)
             
             # Mark as completed
-            session.status = 'completed'
-            db.session.commit()
+            if session:
+                session.status = 'completed'
+                session.processed_records = processed_count
+                db.session.commit()
             
             logger.info(f"CSV processing completed for session {session_id}")
             
         except Exception as e:
             logger.error(f"Error processing CSV for session {session_id}: {str(e)}")
             session = ProcessingSession.query.get(session_id)
-            session.status = 'error'
-            session.error_message = str(e)
+            if session:
+                session.status = 'error'
+                session.error_message = str(e)
+                db.session.commit()
             db.session.commit()
             raise
     

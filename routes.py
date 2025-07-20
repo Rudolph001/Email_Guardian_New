@@ -63,17 +63,37 @@ def upload_file():
         db.session.add(session)
         db.session.commit()
         
-        # Process the file
+        # Process the file asynchronously (start processing and redirect immediately)
+        flash(f'File uploaded successfully. Processing started. Session ID: {session_id}', 'success')
+        
+        # Start processing in background (for now, we'll process synchronously but optimize it)
         try:
-            data_processor.process_csv(session_id, upload_path)
-            flash(f'File uploaded and processed successfully. Session ID: {session_id}', 'success')
+            # Quick validation only
+            import threading
+            def background_processing():
+                try:
+                    data_processor.process_csv(session_id, upload_path)
+                    logger.info(f"Background processing completed for session {session_id}")
+                except Exception as e:
+                    logger.error(f"Background processing error for session {session_id}: {str(e)}")
+                    session = ProcessingSession.query.get(session_id)
+                    if session:
+                        session.status = 'error'
+                        session.error_message = str(e)
+                        db.session.commit()
+            
+            # Start background thread
+            thread = threading.Thread(target=background_processing)
+            thread.daemon = True
+            thread.start()
+            
             return redirect(url_for('dashboard', session_id=session_id))
         except Exception as e:
-            logger.error(f"Processing error for session {session_id}: {str(e)}")
+            logger.error(f"Processing initialization error for session {session_id}: {str(e)}")
             session.status = 'error'
             session.error_message = str(e)
             db.session.commit()
-            flash(f'Error processing file: {str(e)}', 'error')
+            flash(f'Error starting processing: {str(e)}', 'error')
             return redirect(url_for('index'))
             
     except Exception as e:
@@ -81,22 +101,54 @@ def upload_file():
         flash(f'Upload failed: {str(e)}', 'error')
         return redirect(url_for('index'))
 
+@app.route('/api/processing-status/<session_id>')
+def processing_status(session_id):
+    """Get processing status for session"""
+    session = ProcessingSession.query.get_or_404(session_id)
+    return {
+        'status': session.status,
+        'total_records': session.total_records or 0,
+        'processed_records': session.processed_records or 0,
+        'progress_percent': int((session.processed_records or 0) / max(session.total_records or 1, 1) * 100),
+        'error_message': session.error_message
+    }
+
 @app.route('/dashboard/<session_id>')
 def dashboard(session_id):
     """Main dashboard with processing statistics and ML insights"""
     session = ProcessingSession.query.get_or_404(session_id)
     
+    # If still processing, show processing view
+    if session.status in ['uploaded', 'processing']:
+        return render_template('processing.html', session=session)
+    
     # Get processing statistics
-    stats = session_manager.get_processing_stats(session_id)
+    try:
+        stats = session_manager.get_processing_stats(session_id)
+    except Exception as e:
+        logger.warning(f"Could not get processing stats: {str(e)}")
+        stats = {}
     
     # Get ML insights
-    ml_insights = ml_engine.get_insights(session_id)
+    try:
+        ml_insights = ml_engine.get_insights(session_id)
+    except Exception as e:
+        logger.warning(f"Could not get ML insights: {str(e)}")
+        ml_insights = {}
     
     # Get BAU analysis
-    bau_analysis = advanced_ml_engine.analyze_bau_patterns(session_id)
+    try:
+        bau_analysis = advanced_ml_engine.analyze_bau_patterns(session_id)
+    except Exception as e:
+        logger.warning(f"Could not get BAU analysis: {str(e)}")
+        bau_analysis = {}
     
     # Get attachment risk analytics
-    attachment_analytics = advanced_ml_engine.analyze_attachment_risks(session_id)
+    try:
+        attachment_analytics = advanced_ml_engine.analyze_attachment_risks(session_id)
+    except Exception as e:
+        logger.warning(f"Could not get attachment analytics: {str(e)}")
+        attachment_analytics = {}
     
     return render_template('dashboard.html', 
                          session=session, 
