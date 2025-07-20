@@ -369,13 +369,22 @@ def admin():
 @app.route('/rules')
 def rules():
     """Rules management interface"""
-    # Get existing rules for backward compatibility
+    # Get all rules with counts for display
     security_rules = Rule.query.filter_by(rule_type='security', is_active=True).all()
     exclusion_rules = Rule.query.filter_by(rule_type='exclusion', is_active=True).all()
+    
+    # Get rule counts for statistics
+    rule_counts = {
+        'security_active': len(security_rules),
+        'exclusion_active': len(exclusion_rules),
+        'security_total': Rule.query.filter_by(rule_type='security').count(),
+        'exclusion_total': Rule.query.filter_by(rule_type='exclusion').count()
+    }
 
     return render_template('rules.html',
                          security_rules=security_rules,
-                         exclusion_rules=exclusion_rules)
+                         exclusion_rules=exclusion_rules,
+                         rule_counts=rule_counts)
 
 @app.route('/api/rules', methods=['POST'])
 def create_rule():
@@ -424,11 +433,16 @@ def update_rule(rule_id):
         rule = Rule.query.get_or_404(rule_id)
         data = request.get_json()
         
-        # Update rule fields
-        for field in ['name', 'rule_type', 'category', 'description', 'priority', 'conditions', 'actions', 'is_active']:
-            if field in data:
-                setattr(rule, field, data[field])
+        # Handle toggle functionality
+        if 'is_active' in data and data['is_active'] is None:
+            rule.is_active = not rule.is_active
+        else:
+            # Update rule fields
+            for field in ['name', 'rule_type', 'category', 'description', 'priority', 'conditions', 'actions', 'is_active']:
+                if field in data and data[field] is not None:
+                    setattr(rule, field, data[field])
         
+        rule.updated_at = datetime.utcnow()
         db.session.commit()
         
         return jsonify({

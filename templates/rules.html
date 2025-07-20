@@ -29,54 +29,46 @@
 
 <!-- Rule Categories -->
 <div class="row mb-4">
-    <div class="col-md-3 mb-3">
+    <div class="col-md-6 mb-3">
         <div class="card bg-light">
             <div class="card-body text-center">
                 <i class="fas fa-shield-alt fa-2x text-primary mb-2"></i>
                 <h5>Security Rules</h5>
-                <span class="badge bg-primary">5 Active</span>
+                <span class="badge bg-primary">{{ rule_counts.security_active if rule_counts else 0 }} Active</span>
+                <small class="d-block text-muted">{{ rule_counts.security_total if rule_counts else 0 }} Total</small>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
+    <div class="col-md-6 mb-3">
         <div class="card bg-light">
             <div class="card-body text-center">
                 <i class="fas fa-filter fa-2x text-info mb-2"></i>
-                <h5>Content Filters</h5>
-                <span class="badge bg-info">3 Active</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-light">
-            <div class="card-body text-center">
-                <i class="fas fa-users fa-2x text-warning mb-2"></i>
-                <h5>Sender Rules</h5>
-                <span class="badge bg-warning">2 Active</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-light">
-            <div class="card-body text-center">
-                <i class="fas fa-clock fa-2x text-success mb-2"></i>
-                <h5>Time-based Rules</h5>
-                <span class="badge bg-success">1 Active</span>
+                <h5>Exclusion Rules</h5>
+                <span class="badge bg-info">{{ rule_counts.exclusion_active if rule_counts else 0 }} Active</span>
+                <small class="d-block text-muted">{{ rule_counts.exclusion_total if rule_counts else 0 }} Total</small>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Active Rules -->
+<!-- Active Rules Tabs -->
 <div class="row">
     <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-list me-2"></i>
-                        Active Security Rules
-                    </h5>
+                    <ul class="nav nav-tabs card-header-tabs" id="rulesTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                                <i class="fas fa-shield-alt me-2"></i>Security Rules
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="exclusion-tab" data-bs-toggle="tab" data-bs-target="#exclusion" type="button" role="tab">
+                                <i class="fas fa-filter me-2"></i>Exclusion Rules
+                            </button>
+                        </li>
+                    </ul>
                     <div>
                         <button class="btn btn-sm btn-outline-primary" onclick="importRules()">
                             <i class="fas fa-upload me-1"></i>
@@ -90,126 +82,124 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Rule Name</th>
-                                <th>Category</th>
-                                <th>Condition</th>
-                                <th>Action</th>
-                                <th>Priority</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <strong>Suspicious Keywords</strong>
-                                    <br><small class="text-muted">Detects phishing keywords</small>
-                                </td>
-                                <td><span class="badge bg-primary">Security</span></td>
-                                <td>
-                                    <code>content contains "urgent", "verify account"</code>
-                                </td>
-                                <td><span class="badge bg-danger">Flag High Risk</span></td>
-                                <td><span class="badge bg-warning">High</span></td>
-                                <td><span class="badge bg-success">Active</span></td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-primary" onclick="editRule(1)">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-outline-secondary" onclick="toggleRule(1)">
-                                            <i class="fas fa-pause"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger" onclick="deleteRule(1)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>External Domain Alert</strong>
-                                    <br><small class="text-muted">Flags emails from external domains</small>
-                                </td>
-                                <td><span class="badge bg-info">Content</span></td>
-                                <td>
-                                    <code>sender_domain not in whitelist</code>
-                                </td>
-                                <td><span class="badge bg-warning">Flag Medium Risk</span></td>
-                                <td><span class="badge bg-info">Medium</span></td>
-                                <td><span class="badge bg-success">Active</span></td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-primary" onclick="editRule(2)">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-outline-secondary" onclick="toggleRule(2)">
-                                            <i class="fas fa-pause"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger" onclick="deleteRule(2)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>Large Attachment Warning</strong>
-                                    <br><small class="text-muted">Alerts on large file attachments</small>
-                                </td>
-                                <td><span class="badge bg-warning">Sender</span></td>
-                                <td>
-                                    <code>attachment_size > 10MB</code>
-                                </td>
-                                <td><span class="badge bg-info">Flag for Review</span></td>
-                                <td><span class="badge bg-secondary">Low</span></td>
-                                <td><span class="badge bg-success">Active</span></td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-primary" onclick="editRule(3)">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-outline-secondary" onclick="toggleRule(3)">
-                                            <i class="fas fa-pause"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger" onclick="deleteRule(3)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>After Hours Activity</strong>
-                                    <br><small class="text-muted">Detects unusual timing patterns</small>
-                                </td>
-                                <td><span class="badge bg-success">Time-based</span></td>
-                                <td>
-                                    <code>sent_time outside business hours</code>
-                                </td>
-                                <td><span class="badge bg-warning">Flag Medium Risk</span></td>
-                                <td><span class="badge bg-info">Medium</span></td>
-                                <td><span class="badge bg-secondary">Inactive</span></td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-primary" onclick="editRule(4)">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-outline-success" onclick="toggleRule(4)">
-                                            <i class="fas fa-play"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger" onclick="deleteRule(4)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="tab-content" id="rulesTabContent">
+                    <!-- Security Rules Tab -->
+                    <div class="tab-pane fade show active" id="security" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Rule Name</th>
+                                        <th>Description</th>
+                                        <th>Priority</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if security_rules %}
+                                        {% for rule in security_rules %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ rule.name }}</strong>
+                                                <br><small class="text-muted">{{ rule.description or 'No description' }}</small>
+                                            </td>
+                                            <td>
+                                                <small>{{ rule.description or 'No description provided' }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if rule.priority >= 75 %}danger{% elif rule.priority >= 50 %}warning{% else %}secondary{% endif %}">
+                                                    {{ rule.priority }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if rule.is_active %}success{% else %}secondary{% endif %}">
+                                                    {% if rule.is_active %}Active{% else %}Inactive{% endif %}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-primary" onclick="editRule({{ rule.id }})">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary" onclick="toggleRule({{ rule.id }})">
+                                                        <i class="fas fa-{% if rule.is_active %}pause{% else %}play{% endif %}"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-danger" onclick="deleteRule({{ rule.id }})">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">No security rules found. Create your first rule using the button above.</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Exclusion Rules Tab -->
+                    <div class="tab-pane fade" id="exclusion" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Rule Name</th>
+                                        <th>Description</th>
+                                        <th>Priority</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if exclusion_rules %}
+                                        {% for rule in exclusion_rules %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ rule.name }}</strong>
+                                                <br><small class="text-muted">{{ rule.description or 'No description' }}</small>
+                                            </td>
+                                            <td>
+                                                <small>{{ rule.description or 'No description provided' }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if rule.priority >= 75 %}danger{% elif rule.priority >= 50 %}warning{% else %}secondary{% endif %}">
+                                                    {{ rule.priority }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if rule.is_active %}success{% else %}secondary{% endif %}">
+                                                    {% if rule.is_active %}Active{% else %}Inactive{% endif %}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-primary" onclick="editRule({{ rule.id }})">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary" onclick="toggleRule({{ rule.id }})">
+                                                        <i class="fas fa-{% if rule.is_active %}pause{% else %}play{% endif %}"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-danger" onclick="deleteRule({{ rule.id }})">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">No exclusion rules found. Create your first exclusion rule using the button above.</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -402,14 +392,44 @@ function editRule(ruleId) {
 }
 
 function toggleRule(ruleId) {
-    showAlert(`Rule ${ruleId} status toggled`, 'success');
-    location.reload();
+    fetch(`/api/rules/${ruleId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_active: null }) // Server will toggle
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Rule status updated successfully', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('Error updating rule: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error updating rule: ' + error.message, 'danger');
+    });
 }
 
 function deleteRule(ruleId) {
-    if (confirm('Are you sure you want to delete this rule?')) {
-        showAlert(`Rule ${ruleId} deleted successfully`, 'success');
-        location.reload();
+    if (confirm('Are you sure you want to delete this rule? This action cannot be undone.')) {
+        fetch(`/api/rules/${ruleId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Rule deleted successfully', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert('Error deleting rule: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error deleting rule: ' + error.message, 'danger');
+        });
     }
 }
 
