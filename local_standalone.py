@@ -44,6 +44,8 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
 }
+app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
@@ -134,6 +136,12 @@ def list_sessions():
     """List all processing sessions"""
     sessions = ProcessingSession.query.order_by(ProcessingSession.upload_time.desc()).all()
     return render_template('dashboard.html', sessions=sessions)
+
+@app.route('/dashboard/<session_id>')
+def dashboard(session_id):
+    """Basic dashboard for session - simplified version"""
+    session = ProcessingSession.query.get_or_404(session_id)
+    return render_template('dashboard.html', session=session, session_id=session_id)
 
 # Initialize the database
 with app.app_context():
