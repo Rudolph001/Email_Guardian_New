@@ -1,12 +1,22 @@
-# Email Guardian - Completely Standalone Local Version
-# This avoids all import conflicts
+#!/usr/bin/env python3
+"""
+Email Guardian - Standalone Local Application
+Complete email security analysis platform in a single file
+"""
 
 import os
 import sys
 import platform
+import logging
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 # Create Flask app
 app = Flask(__name__)
@@ -113,7 +123,11 @@ def index():
             <p>4. <strong>Configure Rules:</strong> Set up custom business rules</p>
             
             <form action="/upload" method="post" enctype="multipart/form-data" style="margin-top: 20px;">
-                <input type="file" name="file" accept=".csv" required style="padding: 10px; margin-right: 10px;">
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                    <strong>📄 Supported Format:</strong> Tessian email export CSV files<br>
+                    <strong>📊 Expected Columns:</strong> sender, subject, recipients, attachments, timestamps
+                </div>
+                <input type="file" name="file" accept=".csv" required style="padding: 10px; margin-right: 10px; border: 1px solid #ddd; border-radius: 3px;">
                 <button type="submit" class="btn">Upload CSV File</button>
             </form>
         </div>
