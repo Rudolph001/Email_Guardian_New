@@ -377,6 +377,88 @@ def rules():
                          security_rules=security_rules,
                          exclusion_rules=exclusion_rules)
 
+@app.route('/api/rules', methods=['POST'])
+def create_rule():
+    """Create a new rule with complex AND/OR conditions"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['name', 'rule_type', 'conditions']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
+        
+        # Create new rule
+        rule = Rule(
+            name=data['name'],
+            rule_type=data['rule_type'],
+            category=data.get('category', 'security'),
+            description=data.get('description', ''),
+            priority=data.get('priority', 50),
+            conditions=data['conditions'],  # Already JSON string from frontend
+            actions=data.get('actions', 'flag'),
+            is_active=data.get('is_active', True)
+        )
+        
+        db.session.add(rule)
+        db.session.commit()
+        
+        logger.info(f"Created new rule: {rule.name} (ID: {rule.id})")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Rule created successfully',
+            'rule_id': rule.id
+        })
+        
+    except Exception as e:
+        logger.error(f"Error creating rule: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rules/<int:rule_id>', methods=['PUT'])
+def update_rule(rule_id):
+    """Update an existing rule"""
+    try:
+        rule = Rule.query.get_or_404(rule_id)
+        data = request.get_json()
+        
+        # Update rule fields
+        for field in ['name', 'rule_type', 'category', 'description', 'priority', 'conditions', 'actions', 'is_active']:
+            if field in data:
+                setattr(rule, field, data[field])
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Rule updated successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating rule {rule_id}: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rules/<int:rule_id>', methods=['DELETE'])
+def delete_rule(rule_id):
+    """Delete a rule"""
+    try:
+        rule = Rule.query.get_or_404(rule_id)
+        db.session.delete(rule)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Rule deleted successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error deleting rule {rule_id}: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 # API Endpoints
 @app.route('/api/ml_insights/<session_id>')
 def api_ml_insights(session_id):
@@ -540,28 +622,7 @@ def admin_update_whitelist():
         flash(f'Error updating whitelist: {str(e)}', 'error')
         return redirect(url_for('admin'))
 
-@app.route('/rules/create', methods=['POST'])
-def create_rule():
-    """Create new security rule"""
-    try:
-        rule_data = {
-            'name': request.form.get('name'),
-            'description': request.form.get('description'),
-            'rule_type': request.form.get('rule_type', 'security'),
-            'conditions': json.loads(request.form.get('conditions', '{}')),
-            'actions': json.loads(request.form.get('actions', '{}')),
-            'priority': int(request.form.get('priority', 1))
-        }
 
-        rule = Rule(**rule_data)
-        db.session.add(rule)
-        db.session.commit()
-
-        flash(f'Rule "{rule.name}" created successfully', 'success')
-        return redirect(url_for('rules'))
-    except Exception as e:
-        flash(f'Error creating rule: {str(e)}', 'error')
-        return redirect(url_for('rules'))
 
 @app.route('/api/case/<session_id>/<record_id>/status', methods=['PUT'])
 def update_case_status(session_id, record_id):

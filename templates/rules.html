@@ -218,7 +218,7 @@
 
 <!-- New Rule Modal -->
 <div class="modal fade" id="newRuleModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
@@ -230,16 +230,25 @@
             <div class="modal-body">
                 <form id="newRuleForm">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label class="form-label">Rule Name</label>
-                                <input type="text" class="form-control" placeholder="Enter rule name">
+                                <input type="text" class="form-control" id="ruleName" placeholder="Enter rule name" required>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Rule Type</label>
+                                <select class="form-select" id="ruleType" required>
+                                    <option value="security">Security Rule</option>
+                                    <option value="exclusion">Exclusion Rule</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label class="form-label">Category</label>
-                                <select class="form-select">
+                                <select class="form-select" id="ruleCategory">
                                     <option value="security">Security</option>
                                     <option value="content">Content Filter</option>
                                     <option value="sender">Sender Rule</option>
@@ -248,42 +257,130 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Advanced Rule Builder -->
+                    <div class="mb-4">
+                        <label class="form-label">Rule Conditions</label>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">Complex Rule Builder</h6>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addCondition()">
+                                        <i class="fas fa-plus"></i> Add Condition
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="conditionsContainer">
+                                    <!-- Conditions will be added here dynamically -->
+                                    <div class="condition-group" data-group="0">
+                                        <div class="row mb-2">
+                                            <div class="col-md-3">
+                                                <select class="form-select condition-field">
+                                                    <option value="sender">Sender Email</option>
+                                                    <option value="subject">Subject</option>
+                                                    <option value="recipients">Recipients</option>
+                                                    <option value="attachments">Attachments</option>
+                                                    <option value="recipients_email_domain">Recipient Domain</option>
+                                                    <option value="wordlist_attachment">Attachment Keywords</option>
+                                                    <option value="wordlist_subject">Subject Keywords</option>
+                                                    <option value="bunit">Business Unit</option>
+                                                    <option value="department">Department</option>
+                                                    <option value="status">Status</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <select class="form-select condition-operator">
+                                                    <option value="contains">contains</option>
+                                                    <option value="equals">equals</option>
+                                                    <option value="starts_with">starts with</option>
+                                                    <option value="ends_with">ends with</option>
+                                                    <option value="regex">regex match</option>
+                                                    <option value="not_contains">not contains</option>
+                                                    <option value="not_equals">not equals</option>
+                                                    <option value="greater_than">greater than</option>
+                                                    <option value="less_than">less than</option>
+                                                    <option value="in_list">in list</option>
+                                                    <option value="is_empty">is empty</option>
+                                                    <option value="is_not_empty">is not empty</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="text" class="form-control condition-value" placeholder="Enter value or regex pattern">
+                                                <small class="text-muted">For regex: use patterns like .*urgent.*|.*confidential.*</small>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <select class="form-select condition-logic">
+                                                    <option value="AND">AND</option>
+                                                    <option value="OR">OR</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCondition(this)" disabled>
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Logic Preview -->
+                                <div class="mt-3">
+                                    <label class="form-label">Rule Logic Preview:</label>
+                                    <div class="form-control bg-light" id="rulePreview" style="min-height: 60px; font-family: monospace;">
+                                        sender contains ""
+                                    </div>
+                                </div>
+                                
+                                <!-- Test Rule -->
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-outline-info" onclick="testRule()">
+                                        <i class="fas fa-flask"></i> Test Rule Logic
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary ms-2" onclick="addConditionGroup()">
+                                        <i class="fas fa-layer-group"></i> Add Group
+                                    </button>
+                                    <small class="text-muted ms-2">Test your rule syntax before saving</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" id="ruleDescription" rows="2" placeholder="Describe what this rule does"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label class="form-label">Priority</label>
-                                <select class="form-select">
-                                    <option value="high">High</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="low">Low</option>
+                                <select class="form-select" id="rulePriority">
+                                    <option value="100">Critical (100)</option>
+                                    <option value="75">High (75)</option>
+                                    <option value="50" selected>Medium (50)</option>
+                                    <option value="25">Low (25)</option>
+                                    <option value="10">Minimal (10)</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label class="form-label">Action</label>
-                                <select class="form-select">
-                                    <option value="flag_high">Flag High Risk</option>
-                                    <option value="flag_medium">Flag Medium Risk</option>
-                                    <option value="flag_low">Flag for Review</option>
-                                    <option value="block">Block Email</option>
+                                <select class="form-select" id="ruleAction">
+                                    <option value="flag">Flag for Review</option>
+                                    <option value="escalate">Escalate</option>
+                                    <option value="block">Block/Exclude</option>
+                                    <option value="monitor">Monitor</option>
+                                    <option value="alert">Send Alert</option>
                                 </select>
                             </div>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Condition</label>
-                        <textarea class="form-control" rows="3" placeholder="Enter rule condition (e.g., content contains 'urgent')"></textarea>
-                        <div class="form-text">
-                            Use simple conditions like: content contains "text", sender_domain equals "domain.com", attachment_size > 5MB
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" rows="2" placeholder="Describe what this rule does"></textarea>
-                    </div>
+                    
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" checked>
+                        <input class="form-check-input" type="checkbox" id="ruleActive" checked>
                         <label class="form-check-label">Activate rule immediately</label>
                     </div>
                 </form>
@@ -324,11 +421,231 @@ function exportRules() {
     showAlert('Rules exported to downloads folder!', 'info');
 }
 
+let conditionCounter = 0;
+
+function addCondition() {
+    conditionCounter++;
+    const container = document.getElementById('conditionsContainer');
+    const newCondition = `
+        <div class="condition-group" data-group="${conditionCounter}">
+            <div class="row mb-2">
+                <div class="col-md-3">
+                    <select class="form-select condition-field">
+                        <option value="sender">Sender Email</option>
+                        <option value="subject">Subject</option>
+                        <option value="recipients">Recipients</option>
+                        <option value="attachments">Attachments</option>
+                        <option value="recipients_email_domain">Recipient Domain</option>
+                        <option value="wordlist_attachment">Attachment Keywords</option>
+                        <option value="wordlist_subject">Subject Keywords</option>
+                        <option value="bunit">Business Unit</option>
+                        <option value="department">Department</option>
+                        <option value="status">Status</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select condition-operator">
+                        <option value="contains">contains</option>
+                        <option value="equals">equals</option>
+                        <option value="starts_with">starts with</option>
+                        <option value="ends_with">ends with</option>
+                        <option value="regex">regex match</option>
+                        <option value="not_contains">not contains</option>
+                        <option value="not_equals">not equals</option>
+                        <option value="greater_than">greater than</option>
+                        <option value="less_than">less than</option>
+                        <option value="in_list">in list</option>
+                        <option value="is_empty">is empty</option>
+                        <option value="is_not_empty">is not empty</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control condition-value" placeholder="Enter value or regex pattern">
+                    <small class="text-muted">For regex: use patterns like .*urgent.*|.*confidential.*</small>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select condition-logic">
+                        <option value="AND">AND</option>
+                        <option value="OR">OR</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCondition(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', newCondition);
+    updateRulePreview();
+    updateRemoveButtons();
+}
+
+function removeCondition(button) {
+    const conditionGroup = button.closest('.condition-group');
+    conditionGroup.remove();
+    updateRulePreview();
+    updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+    const conditions = document.querySelectorAll('.condition-group');
+    conditions.forEach((condition, index) => {
+        const removeBtn = condition.querySelector('button[onclick*="removeCondition"]');
+        if (conditions.length === 1) {
+            removeBtn.disabled = true;
+        } else {
+            removeBtn.disabled = false;
+        }
+    });
+}
+
+function updateRulePreview() {
+    const conditions = document.querySelectorAll('.condition-group');
+    let preview = '';
+    
+    conditions.forEach((condition, index) => {
+        const field = condition.querySelector('.condition-field').value;
+        const operator = condition.querySelector('.condition-operator').value;
+        const value = condition.querySelector('.condition-value').value || '""';
+        const logic = condition.querySelector('.condition-logic').value;
+        
+        if (index > 0) {
+            preview += ` ${logic} `;
+        }
+        
+        if (operator === 'regex') {
+            preview += `${field} ${operator} "${value}"`;
+        } else {
+            preview += `${field} ${operator} "${value}"`;
+        }
+    });
+    
+    document.getElementById('rulePreview').textContent = preview || 'No conditions defined';
+}
+
+function testRule() {
+    const preview = document.getElementById('rulePreview').textContent;
+    if (preview === 'No conditions defined' || preview.includes('""')) {
+        showAlert('Please complete all condition values before testing.', 'warning');
+        return;
+    }
+    
+    // Validate regex patterns
+    const conditions = document.querySelectorAll('.condition-group');
+    let validationErrors = [];
+    
+    conditions.forEach((condition, index) => {
+        const operator = condition.querySelector('.condition-operator').value;
+        const value = condition.querySelector('.condition-value').value;
+        
+        if (operator === 'regex' && value) {
+            try {
+                new RegExp(value);
+            } catch (e) {
+                validationErrors.push(`Condition ${index + 1}: Invalid regex pattern - ${e.message}`);
+            }
+        }
+    });
+    
+    if (validationErrors.length > 0) {
+        showAlert('Rule validation failed:\\n' + validationErrors.join('\\n'), 'danger');
+    } else {
+        showAlert('Rule syntax is valid! ✓', 'success');
+    }
+}
+
+function addConditionGroup() {
+    showAlert('Nested condition groups coming in future update!', 'info');
+}
+
+function buildRuleConditions() {
+    const conditions = document.querySelectorAll('.condition-group');
+    const conditionArray = [];
+    
+    conditions.forEach((condition) => {
+        const field = condition.querySelector('.condition-field').value;
+        const operator = condition.querySelector('.condition-operator').value;
+        const value = condition.querySelector('.condition-value').value;
+        const logic = condition.querySelector('.condition-logic').value;
+        
+        conditionArray.push({
+            field: field,
+            operator: operator,
+            value: value,
+            logic: logic
+        });
+    });
+    
+    return {
+        logic: 'AND', // Default group logic
+        conditions: conditionArray
+    };
+}
+
 function saveNewRule() {
-    const modal = bootstrap.Modal.getInstance(document.getElementById('newRuleModal'));
-    modal.hide();
-    showAlert('New rule created successfully!', 'success');
-    setTimeout(() => location.reload(), 1000);
+    const ruleName = document.getElementById('ruleName').value;
+    const ruleType = document.getElementById('ruleType').value;
+    const ruleCategory = document.getElementById('ruleCategory').value;
+    const ruleDescription = document.getElementById('ruleDescription').value;
+    const rulePriority = document.getElementById('rulePriority').value;
+    const ruleAction = document.getElementById('ruleAction').value;
+    const ruleActive = document.getElementById('ruleActive').checked;
+    
+    if (!ruleName.trim()) {
+        showAlert('Please enter a rule name.', 'danger');
+        return;
+    }
+    
+    const conditions = buildRuleConditions();
+    
+    // Check if all conditions have values
+    let hasEmptyConditions = false;
+    conditions.conditions.forEach(condition => {
+        if (!condition.value.trim() && !['is_empty', 'is_not_empty'].includes(condition.operator)) {
+            hasEmptyConditions = true;
+        }
+    });
+    
+    if (hasEmptyConditions) {
+        showAlert('Please complete all condition values.', 'danger');
+        return;
+    }
+    
+    const ruleData = {
+        name: ruleName,
+        rule_type: ruleType,
+        category: ruleCategory,
+        description: ruleDescription,
+        priority: parseInt(rulePriority),
+        actions: ruleAction,
+        conditions: JSON.stringify(conditions),
+        is_active: ruleActive
+    };
+    
+    // Send to server
+    fetch('/api/rules', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ruleData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('New rule created successfully!', 'success');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('newRuleModal'));
+            modal.hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('Error creating rule: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error creating rule: ' + error.message, 'danger');
+    });
 }
 
 function showAlert(message, type) {
@@ -345,5 +662,25 @@ function showAlert(message, type) {
         alertDiv.remove();
     }, 3000);
 }
+
+// Initialize event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Update preview when any condition changes
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('.condition-field, .condition-operator, .condition-logic')) {
+            updateRulePreview();
+        }
+    });
+    
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('.condition-value')) {
+            updateRulePreview();
+        }
+    });
+    
+    // Initialize first condition
+    updateRulePreview();
+    updateRemoveButtons();
+});
 </script>
 {% endblock %}

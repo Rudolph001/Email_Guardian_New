@@ -12,8 +12,8 @@ class RuleEngine:
     
     def __init__(self):
         self.supported_operators = [
-            'equals', 'contains', 'not_equals', 'starts_with', 'ends_with',
-            'in_list', 'greater_than', 'less_than', 'matches_pattern', 'is_empty', 'is_not_empty'
+            'equals', 'contains', 'not_equals', 'not_contains', 'starts_with', 'ends_with',
+            'in_list', 'greater_than', 'less_than', 'regex', 'is_empty', 'is_not_empty'
         ]
         
         self.supported_fields = [
@@ -169,10 +169,92 @@ class RuleEngine:
             return all(results)
     
     def _evaluate_single_condition(self, record, condition):
-        """Evaluate a single condition against a record"""
+        """Evaluate a single condition against a record with regex support"""
         try:
             field = condition.get('field')
             operator = condition.get('operator')
+            value = condition.get('value')
+            
+            if not field or not operator:
+                return False
+            
+            # Get field value from record
+            record_value = self._get_field_value(record, field)
+            
+            # Apply operator with enhanced regex support
+            return self._apply_operator_with_regex(record_value, operator, value)
+            
+        except Exception as e:
+            logger.error(f"Error evaluating single condition: {str(e)}")
+            return False
+    
+    def _apply_operator_with_regex(self, record_value, operator, condition_value):
+        """Apply comparison operator with comprehensive regex support"""
+        try:
+            # Convert to string for comparison
+            record_str = str(record_value).lower() if record_value else ""
+            condition_str = str(condition_value).lower() if condition_value else ""
+            
+            if operator == 'equals':
+                return record_str == condition_str
+            elif operator == 'contains':
+                return condition_str in record_str
+            elif operator == 'not_equals':
+                return record_str != condition_str
+            elif operator == 'not_contains':
+                return condition_str not in record_str
+            elif operator == 'starts_with':
+                return record_str.startswith(condition_str)
+            elif operator == 'ends_with':
+                return record_str.endswith(condition_str)
+            elif operator == 'regex':
+                try:
+                    # Enhanced regex with flags and escaping
+                    pattern = re.compile(str(condition_value), re.IGNORECASE | re.MULTILINE)
+                    return bool(pattern.search(str(record_value)))
+                except re.error as e:
+                    logger.warning(f"Invalid regex pattern '{condition_value}': {str(e)}")
+                    return False
+            elif operator == 'greater_than':
+                try:
+                    return float(record_value) > float(condition_value)
+                except (ValueError, TypeError):
+                    return False
+            elif operator == 'less_than':
+                try:
+                    return float(record_value) < float(condition_value)
+                except (ValueError, TypeError):
+                    return False
+            elif operator == 'in_list':
+                if isinstance(condition_value, list):
+                    return record_str in [str(v).lower() for v in condition_value]
+                else:
+                    # Split comma-separated values
+                    values = [v.strip().lower() for v in str(condition_value).split(',')]
+                    return record_str in values
+            elif operator == 'is_empty':
+                return not record_value or str(record_value).strip() == ""
+            elif operator == 'is_not_empty':
+                return record_value and str(record_value).strip() != ""
+            else:
+                logger.warning(f"Unknown operator: {operator}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error applying operator {operator}: {str(e)}")
+            return False
+    
+    def _get_field_value(self, record, field):
+        """Get field value from record with safe attribute access"""
+        try:
+            if hasattr(record, field):
+                return getattr(record, field)
+            else:
+                logger.warning(f"Field '{field}' not found in record")
+                return None
+        except Exception as e:
+            logger.error(f"Error getting field value for '{field}': {str(e)}")
+            return None
             value = condition.get('value', '')
             case_sensitive = condition.get('case_sensitive', False)
             
