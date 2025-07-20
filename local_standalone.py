@@ -143,6 +143,23 @@ def dashboard(session_id):
     session = ProcessingSession.query.get_or_404(session_id)
     return render_template('dashboard.html', session=session, session_id=session_id)
 
+@app.route('/admin')
+def admin():
+    """Admin panel for system configuration"""
+    stats = {
+        'total_sessions': ProcessingSession.query.count(),
+        'active_sessions': ProcessingSession.query.filter_by(status='processing').count(),
+        'completed_sessions': ProcessingSession.query.filter_by(status='completed').count(),
+        'failed_sessions': ProcessingSession.query.filter_by(status='failed').count()
+    }
+    recent_sessions = ProcessingSession.query.order_by(ProcessingSession.upload_time.desc()).limit(5).all()
+    return render_template('admin.html', stats=stats, recent_sessions=recent_sessions)
+
+@app.route('/rules')
+def rules():
+    """Rules management page"""
+    return render_template('rules.html')
+
 # Initialize the database
 with app.app_context():
     db.create_all()
