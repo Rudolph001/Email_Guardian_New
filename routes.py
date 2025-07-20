@@ -405,6 +405,11 @@ def admin():
                          whitelist_domains=whitelist_domains,
                          attachment_keywords=attachment_keywords)
 
+@app.route('/whitelist-domains')
+def whitelist_domains():
+    """Whitelist domains management interface"""
+    return render_template('whitelist_domains.html')
+
 @app.route('/rules')
 def rules():
     """Rules management interface"""
