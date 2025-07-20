@@ -243,8 +243,9 @@ class DataProcessor:
             
             # Update session
             session = ProcessingSession.query.get(session_id)
-            session.exclusion_applied = True
-            db.session.commit()
+            if session:
+                session.exclusion_applied = True
+                db.session.commit()
             
             logger.info(f"Exclusion rules applied: {excluded_count} records excluded")
             
@@ -261,8 +262,9 @@ class DataProcessor:
             
             # Update session
             session = ProcessingSession.query.get(session_id)
-            session.whitelist_applied = True
-            db.session.commit()
+            if session:
+                session.whitelist_applied = True
+                db.session.commit()
             
             logger.info(f"Whitelist filtering applied: {whitelisted_count} records whitelisted")
             
@@ -279,8 +281,9 @@ class DataProcessor:
             
             # Update session
             session = ProcessingSession.query.get(session_id)
-            session.rules_applied = True
-            db.session.commit()
+            if session:
+                session.rules_applied = True
+                db.session.commit()
             
             logger.info(f"Security rules applied: {len(rule_matches)} rule matches found")
             
@@ -297,9 +300,10 @@ class DataProcessor:
             
             # Update session
             session = ProcessingSession.query.get(session_id)
-            session.ml_applied = True
-            session.processing_stats = analysis_results.get('processing_stats', {})
-            db.session.commit()
+            if session:
+                session.ml_applied = True
+                session.processing_stats = analysis_results.get('processing_stats', {})
+                db.session.commit()
             
             logger.info(f"ML analysis completed for session {session_id}")
             
@@ -316,28 +320,28 @@ class DataProcessor:
             
             # Reset processing flags
             session = ProcessingSession.query.get(session_id)
-            if 'exclusion' not in skip_stages:
+            if session and 'exclusion' not in skip_stages:
                 session.exclusion_applied = False
                 # Clear exclusion results
                 EmailRecord.query.filter_by(session_id=session_id).update({
                     'excluded_by_rule': None
                 })
             
-            if 'whitelist' not in skip_stages:
+            if session and 'whitelist' not in skip_stages:
                 session.whitelist_applied = False
                 # Clear whitelist results
                 EmailRecord.query.filter_by(session_id=session_id).update({
                     'whitelisted': False
                 })
             
-            if 'rules' not in skip_stages:
+            if session and 'rules' not in skip_stages:
                 session.rules_applied = False
                 # Clear rule matches
                 EmailRecord.query.filter_by(session_id=session_id).update({
                     'rule_matches': None
                 })
             
-            if 'ml' not in skip_stages:
+            if session and 'ml' not in skip_stages:
                 session.ml_applied = False
                 # Clear ML results
                 EmailRecord.query.filter_by(session_id=session_id).update({
