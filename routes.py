@@ -905,6 +905,97 @@ def update_case_status(session_id, record_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
+@app.route('/api/escalation/<session_id>/<record_id>/generate-email')
+def generate_escalation_email(session_id, record_id):
+    """Generate escalation email for a case"""
+    try:
+        case = EmailRecord.query.filter_by(session_id=session_id, record_id=record_id).first_or_404()
+        
+        # Generate email content based on case details
+        risk_level = case.risk_level or 'Medium'
+        ml_score = case.ml_risk_score or 0.0
+        
+        # Determine recipient based on risk level
+        if risk_level == 'Critical':
+            to_email = 'security-team@company.com'
+        elif risk_level == 'High':
+            to_email = 'it-manager@company.com'
+        else:
+            to_email = 'compliance@company.com'
+        
+        subject = f'URGENT: {risk_level} Risk Email Alert - {case.sender}'
+        
+        # Generate email body
+        body = f"""SECURITY ALERT - Immediate Action Required
+
+Case ID: {case.record_id}
+Risk Level: {risk_level}
+ML Risk Score: {ml_score:.3f}
+
+Email Details:
+- Sender: {case.sender}
+- Recipients: {case.recipients or 'N/A'}
+- Subject: {case.subject or 'N/A'}
+- Time Sent: {case.time or 'N/A'}
+- Attachments: {case.attachments or 'None'}
+
+Risk Assessment:
+{case.ml_explanation or 'No explanation available'}
+
+Recommended Actions:
+"""
+        
+        if risk_level == 'Critical':
+            body += """
+1. Block sender immediately
+2. Quarantine any attachments
+3. Notify affected recipients
+4. Conduct immediate security review
+5. Document incident for compliance
+"""
+        elif risk_level == 'High':
+            body += """
+1. Review email content carefully
+2. Verify sender legitimacy
+3. Scan attachments for threats
+4. Monitor recipient activity
+5. Consider sender restrictions
+"""
+        else:
+            body += """
+1. Review case details
+2. Verify business justification
+3. Monitor for patterns
+4. Update security policies if needed
+"""
+        
+        body += f"""
+Justification Provided: {case.justification or 'None provided'}
+
+Case Status: {case.case_status or 'Active'}
+Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}
+
+This is an automated alert from Email Guardian Security System.
+Please review and take appropriate action immediately.
+
+Email Guardian Security Team
+"""
+        
+        email_data = {
+            'to': to_email,
+            'cc': 'audit@company.com',
+            'subject': subject,
+            'body': body,
+            'priority': 'high' if risk_level in ['Critical', 'High'] else 'normal'
+        }
+        
+        logger.info(f"Generated escalation email for case {record_id} in session {session_id}")
+        return jsonify(email_data)
+        
+    except Exception as e:
+        logger.error(f"Error generating escalation email for case {record_id}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/processing_errors/<session_id>')
 def api_processing_errors(session_id):
     """Get processing errors for session"""

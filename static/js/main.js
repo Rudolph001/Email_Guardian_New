@@ -62,27 +62,25 @@ function extractSessionIdFromUrl() {
 function setupEscalationHandlers() {
     // Handle escalation page specific buttons
     if (window.location.pathname.includes('/escalations/')) {
-        // Re-attach event listeners for dynamically loaded content
-        setTimeout(() => {
-            const actionButtons = document.querySelectorAll('.view-case-btn, .update-case-status-btn, .generate-email-btn');
-            actionButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const recordId = this.dataset.recordId;
-                    const newStatus = this.dataset.newStatus;
-                    
-                    if (this.classList.contains('view-case-btn')) {
-                        showCaseDetails(currentSessionId, recordId);
-                    } else if (this.classList.contains('update-case-status-btn')) {
-                        updateCaseStatus(currentSessionId, recordId, newStatus);
-                    } else if (this.classList.contains('generate-email-btn')) {
-                        generateEscalationEmail(currentSessionId, recordId);
-                    }
-                });
-            });
-        }, 500);
+        // Use event delegation for better handling of dynamic content
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('.generate-email-btn, .view-case-btn, .update-case-status-btn');
+            if (!target) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const recordId = target.dataset.recordId;
+            const newStatus = target.dataset.newStatus;
+            
+            if (target.classList.contains('view-case-btn')) {
+                showCaseDetails(currentSessionId, recordId);
+            } else if (target.classList.contains('update-case-status-btn')) {
+                updateCaseStatus(currentSessionId, recordId, newStatus);
+            } else if (target.classList.contains('generate-email-btn')) {
+                generateEscalationEmail(currentSessionId, recordId);
+            }
+        });
     }
 }
 
@@ -605,12 +603,20 @@ async function escalateCase(sessionId, recordId) {
 
 async function generateEscalationEmail(sessionId, recordId) {
     try {
+        console.log('Generating email for session:', sessionId, 'record:', recordId);
         showLoading('Generating email...');
+        
         const response = await fetch(`/api/escalation/${sessionId}/${recordId}/generate-email`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
 
         if (data.error) {
             showError('Failed to generate email: ' + data.error);
+            hideLoading();
             return;
         }
 
@@ -618,7 +624,7 @@ async function generateEscalationEmail(sessionId, recordId) {
         hideLoading();
     } catch (error) {
         console.error('Error generating email:', error);
-        showError('Failed to generate email');
+        showError('Failed to generate email: ' + error.message);
         hideLoading();
     }
 }
