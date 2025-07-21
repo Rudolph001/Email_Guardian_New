@@ -40,6 +40,9 @@ function initializeApplication() {
     // Set up escalation-specific handlers
     setupEscalationHandlers();
 
+    // Set up modal cleanup safeguards
+    setupModalCleanupSafeguards();
+
     // Load session-specific content if on dashboard pages
     const sessionId = extractSessionIdFromUrl();
     if (sessionId) {
@@ -82,6 +85,53 @@ function setupEscalationHandlers() {
             }
         });
     }
+}
+
+function setupModalCleanupSafeguards() {
+    // Global modal cleanup on page visibility change (handles cases where modal cleanup failed)
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            // Clean up any lingering modal elements when page becomes visible
+            setTimeout(() => {
+                cleanupExistingModals();
+            }, 500);
+        }
+    });
+
+    // Periodic cleanup of any rogue modal backdrops (failsafe)
+    setInterval(() => {
+        const backdrops = document.querySelectorAll('.modal-backdrop, .fade.modal-backdrop, .show.modal-backdrop');
+        if (backdrops.length > 0) {
+            console.log('Cleaning up lingering modal backdrops');
+            backdrops.forEach(backdrop => backdrop.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }
+        
+        // Also check for any elements with modal-backdrop-like styles
+        const suspiciousOverlays = document.querySelectorAll('*[style*="z-index: 1040"], *[style*="z-index: 1050"]');
+        suspiciousOverlays.forEach(overlay => {
+            const computedStyle = window.getComputedStyle(overlay);
+            if (computedStyle.position === 'fixed' && 
+                computedStyle.top === '0px' && 
+                computedStyle.left === '0px' && 
+                computedStyle.width === '100%' && 
+                computedStyle.height === '100%' &&
+                !overlay.classList.contains('loading-overlay')) {
+                overlay.remove();
+            }
+        });
+    }, 5000);
+
+    // Emergency escape key handler to force cleanup
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            setTimeout(() => {
+                cleanupExistingModals();
+            }, 300);
+        }
+    });
 }
 
 function setupEventListeners() {
@@ -901,12 +951,23 @@ function displayCaseDetailsModal(caseData) {
     const modalElement = document.getElementById('caseDetailsModal');
     const modal = new bootstrap.Modal(modalElement);
     
-    // Add event listener for proper cleanup when modal is hidden
+    // Add multiple event listeners for comprehensive cleanup
     modalElement.addEventListener('hidden.bs.modal', function (e) {
         // Clean up modal and any residual backdrops
         setTimeout(() => {
             cleanupExistingModals();
         }, 100);
+    });
+    
+    modalElement.addEventListener('hide.bs.modal', function (e) {
+        // Start cleanup process when hiding begins
+        setTimeout(() => {
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, 50);
     });
     
     modal.show();
@@ -975,12 +1036,23 @@ function displayEmailDraftModal(emailData) {
     const modalElement = document.getElementById('emailDraftModal');
     const modal = new bootstrap.Modal(modalElement);
     
-    // Add event listener for proper cleanup when modal is hidden
+    // Add multiple event listeners for comprehensive cleanup
     modalElement.addEventListener('hidden.bs.modal', function (e) {
         // Clean up modal and any residual backdrops
         setTimeout(() => {
             cleanupExistingModals();
         }, 100);
+    });
+    
+    modalElement.addEventListener('hide.bs.modal', function (e) {
+        // Start cleanup process when hiding begins
+        setTimeout(() => {
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, 50);
     });
     
     modal.show();
@@ -1240,13 +1312,18 @@ function cleanupExistingModals() {
     existingModals.forEach(modal => {
         const modalInstance = bootstrap.Modal.getInstance(modal);
         if (modalInstance) {
-            modalInstance.dispose();
+            try {
+                modalInstance.hide();
+                modalInstance.dispose();
+            } catch (e) {
+                console.log('Modal cleanup warning:', e.message);
+            }
         }
         modal.remove();
     });
     
-    // Remove any lingering backdrops
-    const backdrops = document.querySelectorAll('.modal-backdrop');
+    // Remove any lingering backdrops (including fade variants)
+    const backdrops = document.querySelectorAll('.modal-backdrop, .modal-backdrop.fade, .modal-backdrop.show');
     backdrops.forEach(backdrop => backdrop.remove());
     
     // Remove modal-open class from body if it exists
@@ -1255,6 +1332,17 @@ function cleanupExistingModals() {
     // Reset body styles that might be set by Bootstrap modals
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
+    
+    // Force cleanup of any residual overlay elements
+    const overlays = document.querySelectorAll('[style*="z-index: 1040"], [style*="z-index: 1050"], [style*="z-index: 1060"]');
+    overlays.forEach(overlay => {
+        if (overlay.classList.contains('modal-backdrop') || overlay.style.backgroundColor.includes('rgba')) {
+            overlay.remove();
+        }
+    });
+    
+    // Ensure clicks are re-enabled on the body
+    document.body.style.pointerEvents = '';
 }
 
 // Utility Functions
