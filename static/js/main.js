@@ -650,11 +650,16 @@ async function sendEscalationEmail(sessionId, recordId, emailData) {
         showSuccess('Email sent successfully');
         hideLoading();
 
-        // Close modal
+        // Close modal and clean up
         const modal = bootstrap.Modal.getInstance(document.getElementById('emailDraftModal'));
         if (modal) {
             modal.hide();
         }
+        
+        // Clean up after a short delay to ensure modal is fully closed
+        setTimeout(() => {
+            cleanupExistingModals();
+        }, 300);
 
     } catch (error) {
         console.error('Error sending email:', error);
@@ -886,17 +891,24 @@ function displayCaseDetailsModal(caseData) {
         </div>
     `;
 
-    // Remove existing modal
-    const existingModal = document.getElementById('caseDetailsModal');
-    if (existingModal) {
-        existingModal.remove();
-    }
+    // Clean up any existing modals and backdrops properly
+    cleanupExistingModals();
 
     // Add new modal to body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('caseDetailsModal'));
+    // Show modal with proper event handling
+    const modalElement = document.getElementById('caseDetailsModal');
+    const modal = new bootstrap.Modal(modalElement);
+    
+    // Add event listener for proper cleanup when modal is hidden
+    modalElement.addEventListener('hidden.bs.modal', function (e) {
+        // Clean up modal and any residual backdrops
+        setTimeout(() => {
+            cleanupExistingModals();
+        }, 100);
+    });
+    
     modal.show();
 }
 
@@ -953,17 +965,24 @@ function displayEmailDraftModal(emailData) {
         </div>
     `;
 
-    // Remove existing modal
-    const existingModal = document.getElementById('emailDraftModal');
-    if (existingModal) {
-        existingModal.remove();
-    }
+    // Clean up any existing modals and backdrops properly
+    cleanupExistingModals();
 
     // Add new modal to body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('emailDraftModal'));
+    // Show modal with proper event handling
+    const modalElement = document.getElementById('emailDraftModal');
+    const modal = new bootstrap.Modal(modalElement);
+    
+    // Add event listener for proper cleanup when modal is hidden
+    modalElement.addEventListener('hidden.bs.modal', function (e) {
+        // Clean up modal and any residual backdrops
+        setTimeout(() => {
+            cleanupExistingModals();
+        }, 100);
+    });
+    
     modal.show();
 }
 
@@ -1212,6 +1231,30 @@ function createWhitelistChart(data) {
             }
         }
     });
+}
+
+// Modal Cleanup Function
+function cleanupExistingModals() {
+    // Remove any existing modals
+    const existingModals = document.querySelectorAll('.modal');
+    existingModals.forEach(modal => {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.dispose();
+        }
+        modal.remove();
+    });
+    
+    // Remove any lingering backdrops
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+    
+    // Remove modal-open class from body if it exists
+    document.body.classList.remove('modal-open');
+    
+    // Reset body styles that might be set by Bootstrap modals
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
 }
 
 // Utility Functions
