@@ -168,40 +168,50 @@ class MLEngine:
     
     def _calculate_attachment_risk(self, attachments):
         """Calculate risk score for attachments"""
+        risk_score, _ = self._calculate_attachment_risk_with_keywords(attachments)
+        return risk_score
+    
+    def _calculate_attachment_risk_with_keywords(self, attachments):
+        """Calculate risk score for attachments and return detected keywords"""
         if not attachments:
-            return 0.0
+            return 0.0, []
         
         attachments_lower = attachments.lower()
         risk_score = 0.0
+        detected_keywords = []
         
         # High-risk extensions
         high_risk_extensions = ['.exe', '.scr', '.bat', '.cmd', '.com', '.pif', '.vbs', '.js']
         for ext in high_risk_extensions:
             if ext in attachments_lower:
                 risk_score += 0.8
+                detected_keywords.append(f"high-risk file: {ext}")
         
         # Medium-risk extensions
         medium_risk_extensions = ['.zip', '.rar', '.7z', '.doc', '.docx', '.xls', '.xlsx', '.pdf']
         for ext in medium_risk_extensions:
             if ext in attachments_lower:
                 risk_score += 0.3
+                detected_keywords.append(f"medium-risk file: {ext}")
         
         # Suspicious patterns
         suspicious_patterns = ['double extension', 'hidden', 'confidential', 'urgent', 'invoice']
         for pattern in suspicious_patterns:
             if pattern in attachments_lower:
                 risk_score += 0.2
+                detected_keywords.append(f"suspicious pattern: {pattern}")
         
         # Get attachment keywords from database
         keywords = AttachmentKeyword.query.filter_by(is_active=True).all()
         for keyword in keywords:
             if keyword.keyword.lower() in attachments_lower:
+                detected_keywords.append(f"{keyword.category.lower()} keyword: {keyword.keyword}")
                 if keyword.category == 'Suspicious':
                     risk_score += keyword.risk_score * 0.1
                 elif keyword.category == 'Personal':
                     risk_score += keyword.risk_score * 0.05
         
-        return min(risk_score, 1.0)  # Cap at 1.0
+        return min(risk_score, 1.0), detected_keywords  # Cap at 1.0
     
     def _detect_anomalies(self, features):
         """Detect anomalies using Isolation Forest"""
@@ -317,6 +327,7 @@ class MLEngine:
     def _generate_explanation(self, record, anomaly_score, risk_score):
         """Generate human-readable explanation for ML scoring"""
         explanations = []
+        detected_keywords = []
         
         if anomaly_score > 0.7:
             explanations.append("Unusual communication pattern detected")
@@ -329,15 +340,27 @@ class MLEngine:
             explanations.append("Email sent to public domain")
         
         if record.attachments:
-            attachment_risk = self._calculate_attachment_risk(record.attachments)
+            attachment_risk, keywords_found = self._calculate_attachment_risk_with_keywords(record.attachments)
             if attachment_risk > 0.5:
                 explanations.append("High-risk attachments detected")
+            if keywords_found:
+                detected_keywords.extend(keywords_found)
         
         if record.wordlist_attachment or record.wordlist_subject:
             explanations.append("Sensitive keywords detected")
+            # Add existing wordlist matches
+            if record.wordlist_attachment:
+                detected_keywords.extend([kw.strip() for kw in record.wordlist_attachment.split(',') if kw.strip()])
+            if record.wordlist_subject:
+                detected_keywords.extend([kw.strip() for kw in record.wordlist_subject.split(',') if kw.strip()])
         
         if not explanations:
             explanations.append("Low risk communication")
+        
+        # Add detected keywords to explanation
+        if detected_keywords:
+            unique_keywords = list(set(detected_keywords))
+            explanations.append(f"Keywords detected: {', '.join(unique_keywords)}")
         
         return "; ".join(explanations)
     

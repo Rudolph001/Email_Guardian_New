@@ -668,6 +668,26 @@ def api_case_details(session_id, record_id):
     """Get individual case details"""
     case = EmailRecord.query.filter_by(session_id=session_id, record_id=record_id).first_or_404()
 
+    # Extract detected keywords from ML explanation
+    detected_keywords = []
+    if case.ml_explanation and "Keywords detected:" in case.ml_explanation:
+        keywords_part = case.ml_explanation.split("Keywords detected:")[-1].strip()
+        detected_keywords = [kw.strip() for kw in keywords_part.split(',') if kw.strip()]
+
+    # Also get live analysis of keywords
+    live_keywords = []
+    if case.attachments:
+        from ml_engine import MLEngine
+        ml_engine = MLEngine()
+        _, keywords_found = ml_engine._calculate_attachment_risk_with_keywords(case.attachments)
+        live_keywords.extend(keywords_found)
+    
+    # Add wordlist keywords
+    if case.wordlist_attachment:
+        live_keywords.extend([f"wordlist attachment: {kw.strip()}" for kw in case.wordlist_attachment.split(',') if kw.strip()])
+    if case.wordlist_subject:
+        live_keywords.extend([f"wordlist subject: {kw.strip()}" for kw in case.wordlist_subject.split(',') if kw.strip()])
+
     case_data = {
         'record_id': case.record_id,
         'sender': case.sender,
@@ -681,7 +701,11 @@ def api_case_details(session_id, record_id):
         'rule_matches': json.loads(case.rule_matches) if case.rule_matches else [],
         'case_status': case.case_status,
         'justification': case.justification,
-        'time': case.time
+        'time': case.time,
+        'detected_keywords': detected_keywords,
+        'live_keywords': live_keywords,
+        'wordlist_attachment': case.wordlist_attachment,
+        'wordlist_subject': case.wordlist_subject
     }
 
     return jsonify(case_data)

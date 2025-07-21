@@ -832,6 +832,30 @@ function displayCaseDetailsModal(caseData) {
                             <div class="col-12">
                                 <h6>Attachments</h6>
                                 <p>${caseData.attachments || 'No attachments'}</p>
+                                
+                                <h6>Keywords Detected by ML</h6>
+                                ${caseData.live_keywords && caseData.live_keywords.length > 0 ? `
+                                    <div class="keywords-container mb-2">
+                                        ${caseData.live_keywords.map(keyword => `
+                                            <span class="badge bg-info me-1 mb-1">${keyword}</span>
+                                        `).join('')}
+                                    </div>
+                                ` : '<p class="text-muted">No ML keywords detected</p>'}
+                                
+                                ${caseData.wordlist_attachment || caseData.wordlist_subject ? `
+                                    <h6>Wordlist Matches</h6>
+                                    <div class="wordlist-container mb-2">
+                                        ${caseData.wordlist_attachment ? `
+                                            <p><strong>Attachment Wordlist:</strong> 
+                                            ${caseData.wordlist_attachment.split(',').map(kw => `<span class="badge bg-warning me-1">${kw.trim()}</span>`).join('')}</p>
+                                        ` : ''}
+                                        ${caseData.wordlist_subject ? `
+                                            <p><strong>Subject Wordlist:</strong> 
+                                            ${caseData.wordlist_subject.split(',').map(kw => `<span class="badge bg-warning me-1">${kw.trim()}</span>`).join('')}</p>
+                                        ` : ''}
+                                    </div>
+                                ` : ''}
+                                
                                 <h6>ML Explanation</h6>
                                 <p>${caseData.ml_explanation || 'No explanation available'}</p>
                                 <h6>Justification</h6>
