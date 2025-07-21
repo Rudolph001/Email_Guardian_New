@@ -649,6 +649,78 @@ def api_case_details(session_id, record_id):
 
     return jsonify(case_data)
 
+@app.route('/api/attachment-keywords', methods=['GET', 'POST'])
+def api_attachment_keywords():
+    """Manage attachment keywords for ML engine"""
+    if request.method == 'GET':
+        try:
+            keywords = AttachmentKeyword.query.filter_by(is_active=True).order_by(AttachmentKeyword.category, AttachmentKeyword.keyword).all()
+            return jsonify([{
+                'id': keyword.id,
+                'keyword': keyword.keyword,
+                'category': keyword.category,
+                'risk_score': keyword.risk_score
+            } for keyword in keywords])
+        except Exception as e:
+            logger.error(f"Error fetching attachment keywords: {str(e)}")
+            return jsonify({'error': 'Failed to fetch keywords'}), 500
+    
+    elif request.method == 'POST':
+        try:
+            data = request.get_json()
+            
+            # Validate input
+            if not all(k in data for k in ['keyword', 'category', 'risk_score']):
+                return jsonify({'error': 'Missing required fields'}), 400
+            
+            keyword_text = data['keyword'].strip().lower()
+            category = data['category']
+            risk_score = int(data['risk_score'])
+            
+            if category not in ['Business', 'Personal', 'Suspicious']:
+                return jsonify({'error': 'Invalid category'}), 400
+            
+            if not (1 <= risk_score <= 10):
+                return jsonify({'error': 'Risk score must be between 1 and 10'}), 400
+            
+            # Check if keyword already exists
+            existing = AttachmentKeyword.query.filter_by(keyword=keyword_text, is_active=True).first()
+            if existing:
+                return jsonify({'error': 'Keyword already exists'}), 400
+            
+            # Create new keyword
+            new_keyword = AttachmentKeyword(
+                keyword=keyword_text,
+                category=category,
+                risk_score=risk_score,
+                is_active=True
+            )
+            
+            db.session.add(new_keyword)
+            db.session.commit()
+            
+            return jsonify({'success': True, 'message': 'Keyword added successfully'})
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error adding attachment keyword: {str(e)}")
+            return jsonify({'error': 'Failed to add keyword'}), 500
+
+@app.route('/api/attachment-keywords/<int:keyword_id>', methods=['DELETE'])
+def api_delete_attachment_keyword(keyword_id):
+    """Delete an attachment keyword"""
+    try:
+        keyword = AttachmentKeyword.query.get_or_404(keyword_id)
+        keyword.is_active = False  # Soft delete
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Keyword deleted successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting attachment keyword: {str(e)}")
+        return jsonify({'error': 'Failed to delete keyword'}), 500
+
 @app.route('/api/ml-keywords')
 def api_ml_keywords():
     """Get keywords used by ML engine"""

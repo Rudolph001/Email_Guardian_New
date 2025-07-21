@@ -36,7 +36,7 @@ function initializeApplication() {
 
     // Set up event listeners
     setupEventListeners();
-    
+
     // Set up escalation-specific handlers
     setupEscalationHandlers();
 
@@ -45,7 +45,7 @@ function initializeApplication() {
     if (sessionId) {
         currentSessionId = sessionId;
         loadSessionContent();
-        
+
         // Start real-time updates for dashboard
         if (window.location.pathname.includes('/dashboard/')) {
             setTimeout(startDashboardUpdates, 5000); // Start after initial load
@@ -66,13 +66,13 @@ function setupEscalationHandlers() {
         document.addEventListener('click', function(e) {
             const target = e.target.closest('.generate-email-btn, .view-case-btn, .update-case-status-btn');
             if (!target) return;
-            
+
             e.preventDefault();
             e.stopPropagation();
-            
+
             const recordId = target.dataset.recordId;
             const newStatus = target.dataset.newStatus;
-            
+
             if (target.classList.contains('view-case-btn')) {
                 showCaseDetails(currentSessionId, recordId);
             } else if (target.classList.contains('update-case-status-btn')) {
@@ -89,11 +89,11 @@ function setupEventListeners() {
     document.addEventListener('click', function(e) {
         // Handle both direct clicks and clicks on child elements (like icons)
         const target = e.target.closest('.view-case-btn, .escalate-case-btn, .update-case-status-btn, .generate-email-btn');
-        
+
         if (!target) return;
-        
+
         const recordId = target.dataset.recordId;
-        
+
         if (target.classList.contains('view-case-btn')) {
             e.preventDefault();
             showCaseDetails(currentSessionId, recordId);
@@ -143,25 +143,25 @@ function setupEventListeners() {
 function initializeDashboardAnimations() {
     // Initialize animated counters
     initializeAnimatedCounters();
-    
+
     // Initialize insight highlighting
     initializeInsightHighlighting();
-    
+
     // Initialize interactive card effects
     initializeInteractiveCards();
-    
+
     // Initialize chart animations
     initializeChartAnimations();
 }
 
 function initializeAnimatedCounters() {
     const animatedNumbers = document.querySelectorAll('.animated-number');
-    
+
     animatedNumbers.forEach((element, index) => {
         const target = parseFloat(element.dataset.target) || 0;
         const isDecimal = element.dataset.target && element.dataset.target.includes('.');
         const decimals = isDecimal ? (element.dataset.target.split('.')[1]?.length || 2) : 0;
-        
+
         // Delay animation for staggered effect
         setTimeout(() => {
             animateCounter(element, 0, target, 2000, decimals);
@@ -174,13 +174,13 @@ function animateCounter(element, start, end, duration, decimals = 0) {
     const step = (timestamp) => {
         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
         const current = start + (end - start) * easeOutQuart(progress);
-        
+
         if (decimals > 0) {
             element.textContent = current.toFixed(decimals);
         } else {
             element.textContent = Math.floor(current);
         }
-        
+
         if (progress < 1) {
             requestAnimationFrame(step);
         } else {
@@ -201,17 +201,17 @@ function easeOutQuart(t) {
 function initializeInsightHighlighting() {
     // Highlight critical insights with pulsing animation
     const criticalElements = document.querySelectorAll('.risk-indicator.critical');
-    
+
     criticalElements.forEach(element => {
         element.addEventListener('mouseenter', () => {
             element.style.animation = 'pulseGlow 1s infinite';
         });
-        
+
         element.addEventListener('mouseleave', () => {
             element.style.animation = 'pulseGlow 3s infinite';
         });
     });
-    
+
     // Auto-highlight insights based on thresholds
     setTimeout(() => {
         autoHighlightInsights();
@@ -221,7 +221,7 @@ function initializeInsightHighlighting() {
 function autoHighlightInsights() {
     const criticalCases = parseInt(document.getElementById('criticalCases')?.textContent) || 0;
     const avgRiskScore = parseFloat(document.getElementById('avgRiskScore')?.textContent) || 0;
-    
+
     if (criticalCases > 0) {
         showInsightPopup('Critical cases detected! Review immediately.', 'danger');
     } else if (avgRiskScore > 0.7) {
@@ -240,7 +240,7 @@ function showInsightPopup(message, type) {
     popup.style.zIndex = '9999';
     popup.style.minWidth = '300px';
     popup.style.animation = 'slideInRight 0.5s ease-out';
-    
+
     popup.innerHTML = `
         <div class="d-flex align-items-center">
             <i class="fas fa-lightbulb me-2"></i>
@@ -248,9 +248,9 @@ function showInsightPopup(message, type) {
             <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
         </div>
     `;
-    
+
     document.body.appendChild(popup);
-    
+
     // Auto-remove after 5 seconds
     setTimeout(() => {
         if (popup.parentNode) {
@@ -264,12 +264,12 @@ function showInsightPopup(message, type) {
 
 function initializeInteractiveCards() {
     const interactiveCards = document.querySelectorAll('.interactive-card');
-    
+
     interactiveCards.forEach(card => {
         card.addEventListener('mouseenter', () => {
             // Add glow effect
             card.style.boxShadow = '0 0 30px rgba(13, 110, 253, 0.3)';
-            
+
             // Animate child elements
             const animatedElements = card.querySelectorAll('.animated-number, .progress-bar');
             animatedElements.forEach(el => {
@@ -277,10 +277,10 @@ function initializeInteractiveCards() {
                 el.style.transition = 'transform 0.3s ease';
             });
         });
-        
+
         card.addEventListener('mouseleave', () => {
             card.style.boxShadow = '';
-            
+
             const animatedElements = card.querySelectorAll('.animated-number, .progress-bar');
             animatedElements.forEach(el => {
                 el.style.transform = '';
@@ -301,7 +301,7 @@ function initializeChartAnimations() {
                     : 0;
             }
         };
-        
+
         Chart.defaults.elements.arc.borderWidth = 2;
         Chart.defaults.elements.arc.hoverBorderWidth = 4;
     }
@@ -325,12 +325,12 @@ function updateDashboardStats() {
                 console.error('Error updating dashboard stats:', data.error);
                 return;
             }
-            
+
             // Update counters with new values
             updateAnimatedCounter('totalRecords', data.total_records);
             updateAnimatedCounter('criticalCases', data.critical_cases);
             updateAnimatedCounter('avgRiskScore', data.avg_risk_score, 3);
-            
+
             // Show notification if critical cases increase
             const currentCritical = parseInt(document.getElementById('criticalCases')?.textContent) || 0;
             if (data.critical_cases > currentCritical) {
@@ -351,10 +351,10 @@ function updateAnimatedCounter(elementId, newValue, decimals = 0) {
             element.style.background = 'rgba(13, 110, 253, 0.2)';
             element.style.borderRadius = '4px';
             element.style.padding = '2px 4px';
-            
+
             // Animate to new value
             animateCounter(element, currentValue, newValue, 1000, decimals);
-            
+
             // Remove highlight after animation
             setTimeout(() => {
                 element.style.background = '';
@@ -605,13 +605,13 @@ async function generateEscalationEmail(sessionId, recordId) {
     try {
         console.log('Generating email for session:', sessionId, 'record:', recordId);
         showLoading('Generating email...');
-        
+
         const response = await fetch(`/api/escalation/${sessionId}/${recordId}/generate-email`);
-        
+
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
 
         if (data.error) {
@@ -1371,15 +1371,204 @@ function loadMLKeywords() {
                 `;
             });
 
-            html += '</div>';
+            html += `</div>`;
+
             keywordsDiv.innerHTML = html;
-            keywordsDiv.style.display = 'block';
         })
         .catch(error => {
             console.error('Error loading ML keywords:', error);
-            document.getElementById('mlKeywords').innerHTML = 
-                '<div class="alert alert-danger">Error loading keywords</div>';
+            keywordsDiv.innerHTML = '<div class="alert alert-danger">Failed to load keywords</div>';
         });
+}
+
+// Attachment Keywords Management
+document.addEventListener('DOMContentLoaded', function() {
+    // Load attachment keywords on page load if container exists
+    if (document.getElementById('keywordsContainer')) {
+        loadAttachmentKeywords();
+
+        // Set up form submission
+        const keywordForm = document.getElementById('keywordForm');
+        if (keywordForm) {
+            keywordForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                addAttachmentKeyword();
+            });
+        }
+    }
+});
+
+function loadAttachmentKeywords() {
+    const container = document.getElementById('keywordsContainer');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="text-center py-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading keywords...</p>
+        </div>
+    `;
+
+    fetch('/api/attachment-keywords')
+        .then(response => response.json())
+        .then(keywords => {
+            if (keywords.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-tags fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">No attachment keywords found</p>
+                        <p class="small text-muted">Add keywords to improve ML risk detection accuracy</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Group by category
+            const grouped = keywords.reduce((acc, keyword) => {
+                if (!acc[keyword.category]) acc[keyword.category] = [];
+                acc[keyword.category].push(keyword);
+                return acc;
+            }, {});
+
+            let html = '';
+
+            // Display by category
+            Object.keys(grouped).sort().forEach(category => {
+                const badgeClass = category === 'Business' ? 'success' : 
+                                 category === 'Personal' ? 'warning' : 'danger';
+
+                html += `
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">
+                            <span class="badge bg-${badgeClass} me-2">${category}</span>
+                            (${grouped[category].length} keywords)
+                        </h6>
+                        <div class="row">
+                `;
+
+                grouped[category].forEach(keyword => {
+                    html += `
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                                <div>
+                                    <strong>${keyword.keyword}</strong>
+                                    <small class="text-muted d-block">Risk Score: ${keyword.risk_score}</small>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteAttachmentKeyword(${keyword.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading attachment keywords:', error);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Failed to load attachment keywords: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function addAttachmentKeyword() {
+    const keyword = document.getElementById('keywordInput').value.trim();
+    const category = document.getElementById('categoryInput').value;
+    const riskScore = parseInt(document.getElementById('riskScoreInput').value);
+
+    if (!keyword || !category || !riskScore) {
+        alert('Please fill in all fields');
+        return;
+    }
+
+    const data = {
+        keyword: keyword,
+        category: category,
+        risk_score: riskScore
+    };
+
+    fetch('/api/attachment-keywords', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            // Clear form
+            document.getElementById('keywordForm').reset();
+            document.getElementById('riskScoreInput').value = 5;
+
+            // Reload keywords
+            loadAttachmentKeywords();
+
+            // Show success message
+            showAlert('Keyword added successfully!', 'success');
+        } else {
+            showAlert(result.error || 'Failed to add keyword', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error adding keyword:', error);
+        showAlert('Failed to add keyword: ' + error.message, 'danger');
+    });
+}
+
+function deleteAttachmentKeyword(keywordId) {
+    if (!confirm('Are you sure you want to delete this keyword?')) {
+        return;
+    }
+
+    fetch(`/api/attachment-keywords/${keywordId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            loadAttachmentKeywords();
+            showAlert('Keyword deleted successfully!', 'success');
+        } else {
+            showAlert(result.error || 'Failed to delete keyword', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting keyword:', error);
+        showAlert('Failed to delete keyword: ' + error.message, 'danger');
+    });
+}
+
+function showAlert(message, type) {
+    const alertContainer = document.createElement('div');
+    alertContainer.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertContainer.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertContainer.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(alertContainer);
+
+    setTimeout(() => {
+        if (alertContainer.parentNode) {
+            alertContainer.parentNode.removeChild(alertContainer);
+        }
+    }, 5000);
 }
 
 // Expose functions globally for inline event handlers
