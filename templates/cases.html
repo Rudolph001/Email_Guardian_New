@@ -37,7 +37,7 @@
                 <option value="Low" {% if risk_level == 'Low' %}selected{% endif %}>Low</option>
             </select>
         </div>
-        
+
         <div class="col-md-3">
             <label for="case_status" class="form-label">Case Status</label>
             <select class="form-select" id="case_status" name="case_status">
@@ -47,13 +47,13 @@
                 <option value="Escalated" {% if case_status == 'Escalated' %}selected{% endif %}>Escalated</option>
             </select>
         </div>
-        
+
         <div class="col-md-4">
             <label for="search" class="form-label">Search</label>
             <input type="text" class="form-control" id="search" name="search" 
                    placeholder="Search sender, subject, or domain..." value="{{ search }}">
         </div>
-        
+
         <div class="col-md-2">
             <label class="form-label">&nbsp;</label>
             <div class="d-grid">
@@ -96,6 +96,107 @@
             <div class="card-body">
                 <h4 class="text-success">{{ cases.items | selectattr('case_status', 'equalto', 'Escalated') | list | length }}</h4>
                 <p class="text-muted mb-0">Escalated Cases</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Visibility Statistics -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-chart-pie"></i>
+                    Data Processing Breakdown - Where Did Your {{ data_breakdown.total_imported }} Imported Records Go?
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <h4 class="text-primary">{{ data_breakdown.total_imported }}</h4>
+                            <small class="text-muted">Total Imported</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <h4 class="text-success">{{ data_breakdown.cases_shown }}</h4>
+                            <small class="text-muted">Cases Shown</small>
+                            <div class="text-success">{{ data_breakdown.percentage_visible }}%</div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <h4 class="text-warning">{{ data_breakdown.whitelisted }}</h4>
+                            <small class="text-muted">Whitelisted</small>
+                            <div class="text-warning">{{ ((data_breakdown.whitelisted / data_breakdown.total_imported * 100) if data_breakdown.total_imported > 0 else 0) | round(1) }}%</div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <h4 class="text-danger">{{ data_breakdown.excluded }}</h4>
+                            <small class="text-muted">Excluded by Rules</small>
+                            <div class="text-danger">{{ ((data_breakdown.excluded / data_breakdown.total_imported * 100) if data_breakdown.total_imported > 0 else 0) | round(1) }}%</div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <h4 class="text-secondary">{{ active_whitelist_domains }}</h4>
+                            <small class="text-muted">Active Whitelist Domains</small>
+                            <a href="{{ url_for('whitelist_analysis', session_id=session.id) }}" class="btn btn-sm btn-outline-secondary mt-1">
+                                <i class="fas fa-cog"></i> Manage
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <a href="{{ url_for('rules') }}" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-rules"></i> View Rules
+                            </a>
+                            <small class="text-muted d-block mt-1">Check Exclusion Rules</small>
+                        </div>
+                    </div>
+                </div>
+                {% if data_breakdown.percentage_visible < 50 %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Low Visibility:</strong> Only {{ data_breakdown.percentage_visible }}% of your imported records are visible as cases. 
+                    Most data was filtered out by whitelist ({{ data_breakdown.whitelisted }} records) or exclusion rules ({{ data_breakdown.excluded }} records).
+                    Consider reviewing your <a href="{{ url_for('rules') }}">filtering rules</a> if this seems unexpected.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Cases Statistics -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h4 class="text-white">{{ cases.total }}</h4>
+                <p class="text-white-50 mb-0">Active Cases (Filtered View)</p>
+                <small class="text-white-50">Ready for review</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h4 class="text-white">{{ data_breakdown.whitelisted }}</h4>
+                <p class="text-white-50 mb-0">Auto-Cleared (Whitelisted)</p>
+                <small class="text-white-50">No action needed</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <h4 class="text-white">{{ data_breakdown.excluded }}</h4>
+                <p class="text-white-50 mb-0">Excluded by Rules</p>
+                <small class="text-white-50">Filtered out</small>
             </div>
         </div>
     </div>
@@ -163,6 +264,12 @@
                         <th>Risk Level</th>
                         <th>ML Score</th>
                         <th>Status</th>
+                        {% if view_type in ['excluded', 'all'] %}
+                        <th>Excluded By</th>
+                        {% endif %}
+                        {% if view_type in ['whitelisted', 'all'] %}
+                        <th>Whitelisted</th>
+                        {% endif %}
                         <th>Time</th>
                         <th>Actions</th>
                     </tr>
@@ -209,13 +316,31 @@
                             </div>
                         </td>
                         <td>
-                            <span class="badge status-{{ case.case_status.lower() if case.case_status else 'active' }}">
-                                {{ case.case_status or 'Active' }}
-                            </span>
+                            {% if case.case_status %}
+                                <span class="badge status-{{ case.case_status.lower() }}">{{ case.case_status }}</span>
+                            {% else %}
+                                <span class="badge status-active">Active</span>
+                            {% endif %}
                         </td>
+                        {% if view_type in ['excluded', 'all'] %}
                         <td>
-                            <small class="text-muted">{{ case.time[:16] if case.time else 'N/A' }}</small>
+                            {% if case.excluded_by_rule %}
+                                <span class="badge bg-danger">{{ case.excluded_by_rule }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
                         </td>
+                        {% endif %}
+                        {% if view_type in ['whitelisted', 'all'] %}
+                        <td>
+                            {% if case.whitelisted %}
+                                <span class="badge bg-success">Whitelisted</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                        <td>{{ case.time[:19] if case.time else 'N/A' }}</td>
                         <td>
                             <div class="btn-group" role="group">
                                 <button class="btn btn-sm btn-outline-primary view-case-btn" 
@@ -237,7 +362,7 @@
                 </tbody>
             </table>
         </div>
-        
+
         <!-- Pagination -->
         {% if cases.pages > 1 %}
         <nav aria-label="Cases pagination" class="mt-4">
@@ -249,7 +374,7 @@
                     </a>
                 </li>
                 {% endif %}
-                
+
                 {% for page_num in cases.iter_pages() %}
                     {% if page_num %}
                         {% if page_num != cases.page %}
@@ -269,7 +394,7 @@
                     </li>
                     {% endif %}
                 {% endfor %}
-                
+
                 {% if cases.has_next %}
                 <li class="page-item">
                     <a class="page-link" href="{{ url_for('cases', session_id=session.id, page=cases.next_num, risk_level=risk_level, case_status=case_status, search=search) }}">
@@ -280,7 +405,7 @@
             </ul>
         </nav>
         {% endif %}
-        
+
         {% else %}
         <div class="text-center py-5">
             <i class="fas fa-search fa-3x text-muted mb-3"></i>
@@ -304,11 +429,11 @@ window.currentSessionId = '{{ session.id }}';
 function toggleSelectAll() {
     const selectAll = document.getElementById('selectAll');
     const checkboxes = document.querySelectorAll('.case-checkbox');
-    
+
     checkboxes.forEach(checkbox => {
         checkbox.checked = selectAll.checked;
     });
-    
+
     updateBulkActions();
 }
 
@@ -321,11 +446,11 @@ function updateBulkActions() {
     const selectedCases = document.querySelectorAll('.case-checkbox:checked');
     const bulkClearBtn = document.getElementById('bulkClearBtn');
     const bulkEscalateBtn = document.getElementById('bulkEscalateBtn');
-    
+
     const hasSelection = selectedCases.length > 0;
     bulkClearBtn.disabled = !hasSelection;
     bulkEscalateBtn.disabled = !hasSelection;
-    
+
     if (hasSelection) {
         bulkClearBtn.innerHTML = `<i class="fas fa-check"></i> Clear Selected (${selectedCases.length})`;
         bulkEscalateBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Escalate Selected (${selectedCases.length})`;
@@ -338,7 +463,7 @@ function updateBulkActions() {
 function bulkClearCases() {
     const selectedCases = document.querySelectorAll('.case-checkbox:checked');
     if (selectedCases.length === 0) return;
-    
+
     if (confirm(`Clear ${selectedCases.length} selected case(s)?`)) {
         selectedCases.forEach(checkbox => {
             updateCaseStatus(currentSessionId, checkbox.value, 'Cleared');
@@ -349,7 +474,7 @@ function bulkClearCases() {
 function bulkEscalateCases() {
     const selectedCases = document.querySelectorAll('.case-checkbox:checked');
     if (selectedCases.length === 0) return;
-    
+
     if (confirm(`Escalate ${selectedCases.length} selected case(s)?`)) {
         selectedCases.forEach(checkbox => {
             updateCaseStatus(currentSessionId, checkbox.value, 'Escalated');
@@ -368,7 +493,7 @@ document.getElementById('search').addEventListener('keypress', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('filterForm');
     const formInputs = filterForm.querySelectorAll('select, input');
-    
+
     formInputs.forEach(input => {
         input.addEventListener('change', function() {
             // Auto-submit form on filter change (except search which uses debounce)
@@ -385,14 +510,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const recordId = btn.getAttribute('data-record-id');
             showCaseDetails(currentSessionId, recordId);
         }
-        
+
         if (e.target.closest('.update-case-status-btn')) {
             const btn = e.target.closest('.update-case-status-btn');
             const recordId = btn.getAttribute('data-record-id');
             const newStatus = btn.getAttribute('data-new-status');
             updateCaseStatus(currentSessionId, recordId, newStatus);
         }
-        
+
         if (e.target.closest('.escalate-case-btn')) {
             const btn = e.target.closest('.escalate-case-btn');
             const recordId = btn.getAttribute('data-record-id');
@@ -407,12 +532,12 @@ async function showCaseDetails(sessionId, recordId) {
         showLoading('Loading case details...');
         const response = await fetch(`/api/case/${sessionId}/${recordId}`);
         const data = await response.json();
-        
+
         if (data.error) {
             showError('Failed to load case details: ' + data.error);
             return;
         }
-        
+
         displayCaseDetailsModal(data);
         hideLoading();
     } catch (error) {
@@ -470,16 +595,16 @@ function displayCaseDetailsModal(caseData) {
             </div>
         </div>
     `;
-    
+
     // Remove existing modal
     const existingModal = document.getElementById('caseDetailsModal');
     if (existingModal) {
         existingModal.remove();
     }
-    
+
     // Add new modal to body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
+
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('caseDetailsModal'));
     modal.show();
@@ -488,7 +613,7 @@ function displayCaseDetailsModal(caseData) {
 async function updateCaseStatus(sessionId, recordId, newStatus) {
     try {
         showLoading(`Updating case status to ${newStatus}...`);
-        
+
         const response = await fetch(`/api/case/${sessionId}/${recordId}/status`, {
             method: 'PUT',
             headers: {
@@ -498,19 +623,19 @@ async function updateCaseStatus(sessionId, recordId, newStatus) {
                 status: newStatus
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.error) {
             showError('Failed to update case status: ' + data.error);
             return;
         }
-        
+
         showSuccess(`Case status updated to ${newStatus}`);
         setTimeout(() => {
             location.reload();
         }, 1000);
-        
+
         hideLoading();
     } catch (error) {
         console.error('Error updating case status:', error);
@@ -559,7 +684,7 @@ function showNotification(message, type) {
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     document.body.appendChild(alertDiv);
-    
+
     setTimeout(() => {
         if (alertDiv.parentNode) {
             alertDiv.remove();

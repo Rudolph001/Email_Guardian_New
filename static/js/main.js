@@ -1571,6 +1571,13 @@ function showAlert(message, type) {
     }, 5000);
 }
 
+function toggleRecordView(viewType) {
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('view', viewType);
+    currentUrl.searchParams.set('page', '1'); // Reset to page 1 when changing view
+    window.location.href = currentUrl.toString();
+}
+
 // Expose functions globally for inline event handlers
 window.showCaseDetails = showCaseDetails;
 window.escalateCase = escalateCase;
@@ -1579,3 +1586,4 @@ window.generateEscalationEmail = generateEscalationEmail;
 window.openOutlookDraft = openOutlookDraft;
 window.getEmailFormData = getEmailFormData;
 window.sendEmailFromForm = sendEmailFromForm;
+window.toggleRecordView = toggleRecordView;

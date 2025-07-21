@@ -286,11 +286,24 @@ def cases(session_id):
     risk_level = request.args.get('risk_level', '')
     case_status = request.args.get('case_status', '')
     search = request.args.get('search', '')
+    view_type = request.args.get('view', 'active')  # active, whitelisted, excluded, all
 
-    # Build query with filters - exclude whitelisted records from cases
-    query = EmailRecord.query.filter_by(session_id=session_id).filter(
-        EmailRecord.whitelisted != True
-    )
+    # Build query with filters based on view type
+    query = EmailRecord.query.filter_by(session_id=session_id)
+    
+    if view_type == 'active':
+        # Default view - exclude whitelisted and excluded records
+        query = query.filter(
+            EmailRecord.whitelisted != True,
+            EmailRecord.excluded_by_rule.is_(None)
+        )
+    elif view_type == 'whitelisted':
+        # Show only whitelisted records
+        query = query.filter(EmailRecord.whitelisted == True)
+    elif view_type == 'excluded':
+        # Show only excluded records
+        query = query.filter(EmailRecord.excluded_by_rule.isnot(None))
+    # 'all' view shows everything with no additional filters
 
     if risk_level:
         query = query.filter(EmailRecord.risk_level == risk_level)
@@ -310,12 +323,35 @@ def cases(session_id):
         page=page, per_page=50, error_out=False
     )
 
-    # Get whitelist statistics
+    # Get comprehensive data breakdown statistics
+    total_records = EmailRecord.query.filter_by(session_id=session_id).count()
+    
     total_whitelisted = EmailRecord.query.filter_by(session_id=session_id).filter(
         EmailRecord.whitelisted == True
     ).count()
     
+    total_excluded = EmailRecord.query.filter(
+        EmailRecord.session_id == session_id,
+        EmailRecord.excluded_by_rule.isnot(None)
+    ).count()
+    
+    # Cases shown (non-whitelisted, non-excluded)
+    cases_shown = EmailRecord.query.filter(
+        EmailRecord.session_id == session_id,
+        EmailRecord.whitelisted != True,
+        EmailRecord.excluded_by_rule.is_(None)
+    ).count()
+    
     active_whitelist_domains = WhitelistDomain.query.filter_by(is_active=True).count()
+    
+    # Data breakdown for transparency
+    data_breakdown = {
+        'total_imported': total_records,
+        'cases_shown': cases_shown,
+        'whitelisted': total_whitelisted,
+        'excluded': total_excluded,
+        'percentage_visible': round((cases_shown / total_records * 100) if total_records > 0 else 0, 1)
+    }
 
     return render_template('cases.html', 
                          session=session,
@@ -323,7 +359,8 @@ def cases(session_id):
                          risk_level=risk_level,
                          case_status=case_status,
                          search=search,
-                         total_whitelisted=total_whitelisted,
+                         view_type=view_type,
+                         data_breakdown=data_breakdown,
                          active_whitelist_domains=active_whitelist_domains)
 
 @app.route('/escalations/<session_id>')
