@@ -146,15 +146,15 @@
                         </td>
                         <td>
                             <div class="btn-group-vertical btn-group-sm" role="group">
-                                <button class="btn btn-outline-primary view-case-btn" 
+                                <button type="button" class="btn btn-outline-primary view-case-btn" 
                                         data-record-id="{{ case.record_id }}" title="View Details">
                                     <i class="fas fa-eye"></i> Details
                                 </button>
-                                <button class="btn btn-outline-success update-case-status-btn" 
+                                <button type="button" class="btn btn-outline-success update-case-status-btn" 
                                         data-record-id="{{ case.record_id }}" data-new-status="Escalated" title="Escalate">
                                     <i class="fas fa-arrow-up"></i> Escalate
                                 </button>
-                                <button class="btn btn-outline-info generate-email-btn" 
+                                <button type="button" class="btn btn-outline-info generate-email-btn" 
                                         data-record-id="{{ case.record_id }}" title="Generate Email">
                                     <i class="fas fa-envelope"></i> Email
                                 </button>
@@ -219,15 +219,15 @@
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm" role="group">
-                                <button class="btn btn-outline-primary view-case-btn" 
+                                <button type="button" class="btn btn-outline-primary view-case-btn" 
                                         data-record-id="{{ case.record_id }}" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn btn-outline-success update-case-status-btn" 
+                                <button type="button" class="btn btn-outline-success update-case-status-btn" 
                                         data-record-id="{{ case.record_id }}" data-new-status="Cleared" title="Resolve">
                                     <i class="fas fa-check"></i>
                                 </button>
-                                <button class="btn btn-outline-info" onclick="assignCase('{{ case.record_id }}')" title="Assign">
+                                <button type="button" class="btn btn-outline-info" onclick="assignCase('{{ case.record_id }}')" title="Assign">
                                     <i class="fas fa-user-plus"></i>
                                 </button>
                             </div>

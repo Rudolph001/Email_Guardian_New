@@ -36,6 +36,9 @@ function initializeApplication() {
 
     // Set up event listeners
     setupEventListeners();
+    
+    // Set up escalation-specific handlers
+    setupEscalationHandlers();
 
     // Load session-specific content if on dashboard pages
     const sessionId = extractSessionIdFromUrl();
@@ -56,27 +59,61 @@ function extractSessionIdFromUrl() {
     return matches ? matches[2] : null;
 }
 
+function setupEscalationHandlers() {
+    // Handle escalation page specific buttons
+    if (window.location.pathname.includes('/escalations/')) {
+        // Re-attach event listeners for dynamically loaded content
+        setTimeout(() => {
+            const actionButtons = document.querySelectorAll('.view-case-btn, .update-case-status-btn, .generate-email-btn');
+            actionButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const recordId = this.dataset.recordId;
+                    const newStatus = this.dataset.newStatus;
+                    
+                    if (this.classList.contains('view-case-btn')) {
+                        showCaseDetails(currentSessionId, recordId);
+                    } else if (this.classList.contains('update-case-status-btn')) {
+                        updateCaseStatus(currentSessionId, recordId, newStatus);
+                    } else if (this.classList.contains('generate-email-btn')) {
+                        generateEscalationEmail(currentSessionId, recordId);
+                    }
+                });
+            });
+        }, 500);
+    }
+}
+
 function setupEventListeners() {
     // Case management
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('view-case-btn')) {
-            const recordId = e.target.dataset.recordId;
+        // Handle both direct clicks and clicks on child elements (like icons)
+        const target = e.target.closest('.view-case-btn, .escalate-case-btn, .update-case-status-btn, .generate-email-btn');
+        
+        if (!target) return;
+        
+        const recordId = target.dataset.recordId;
+        
+        if (target.classList.contains('view-case-btn')) {
+            e.preventDefault();
             showCaseDetails(currentSessionId, recordId);
         }
 
-        if (e.target.classList.contains('escalate-case-btn')) {
-            const recordId = e.target.dataset.recordId;
+        if (target.classList.contains('escalate-case-btn')) {
+            e.preventDefault();
             escalateCase(currentSessionId, recordId);
         }
 
-        if (e.target.classList.contains('update-case-status-btn')) {
-            const recordId = e.target.dataset.recordId;
-            const newStatus = e.target.dataset.newStatus;
+        if (target.classList.contains('update-case-status-btn')) {
+            e.preventDefault();
+            const newStatus = target.dataset.newStatus;
             updateCaseStatus(currentSessionId, recordId, newStatus);
         }
 
-        if (e.target.classList.contains('generate-email-btn')) {
-            const recordId = e.target.dataset.recordId;
+        if (target.classList.contains('generate-email-btn')) {
+            e.preventDefault();
             generateEscalationEmail(currentSessionId, recordId);
         }
     });
