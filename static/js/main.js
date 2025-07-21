@@ -1381,6 +1381,30 @@ function loadMLKeywords() {
         });
 }
 
+function populateDefaultKeywords() {
+    if (confirm('This will add default ML keywords to the database. Continue?')) {
+        fetch('/api/populate-default-keywords', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                alert('Successfully added ' + data.count + ' default keywords');
+                loadAttachmentKeywords(); // Reload the keywords display
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to populate default keywords');
+        });
+    }
+}
+
 // Attachment Keywords Management
 document.addEventListener('DOMContentLoaded', function() {
     // Load attachment keywords on page load if container exists
