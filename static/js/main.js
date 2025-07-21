@@ -1391,16 +1391,18 @@ function populateDefaultKeywords() {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.error) {
-                alert('Error: ' + data.error);
+            if (data.success) {
+                showAlert(data.message, 'success');
+                if (typeof loadAttachmentKeywords === 'function') {
+                    loadAttachmentKeywords(); // Reload the keywords display
+                }
             } else {
-                alert('Successfully added ' + data.count + ' default keywords');
-                loadAttachmentKeywords(); // Reload the keywords display
+                showAlert(data.error || 'Failed to populate keywords', 'danger');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Failed to populate default keywords');
+            showAlert('Failed to populate default keywords: ' + error.message, 'danger');
         });
     }
 }

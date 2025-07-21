@@ -1239,13 +1239,14 @@ def cleanup_old_sessions():
         logger.error(f"Error during cleanup: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/admin/keywords/populate', methods=['POST'])
+@app.route('/api/populate-default-keywords', methods=['POST'])
 def populate_default_keywords():
     """Populate database with default ML keywords"""
     try:
         # Check if keywords already exist
-        if AttachmentKeyword.query.count() > 0:
-            return jsonify({'message': 'Keywords already exist', 'count': AttachmentKeyword.query.count()})
+        existing_count = AttachmentKeyword.query.count()
+        if existing_count > 0:
+            return jsonify({'success': True, 'message': f'Keywords already exist ({existing_count} found)', 'count': existing_count})
 
         default_keywords = [
             # Suspicious keywords
@@ -1328,14 +1329,15 @@ def populate_default_keywords():
 
         logger.info(f"Added {len(default_keywords)} default keywords to database")
         return jsonify({
-            'status': 'success', 
-            'message': f'Added {len(default_keywords)} keywords',
+            'success': True, 
+            'message': f'Successfully added {len(default_keywords)} default keywords',
             'count': len(default_keywords)
         })
 
     except Exception as e:
         logger.error(f"Error populating keywords: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.errorhandler(404)
 def not_found_error(error):
