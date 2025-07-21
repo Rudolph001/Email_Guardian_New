@@ -915,13 +915,8 @@ def generate_escalation_email(session_id, record_id):
         risk_level = case.risk_level or 'Medium'
         ml_score = case.ml_risk_score or 0.0
         
-        # Determine recipient based on risk level
-        if risk_level == 'Critical':
-            to_email = 'security-team@company.com'
-        elif risk_level == 'High':
-            to_email = 'it-manager@company.com'
-        else:
-            to_email = 'compliance@company.com'
+        # Use the sender email address from the case as the recipient
+        to_email = case.sender
         
         subject = f'URGENT: {risk_level} Risk Email Alert - {case.sender}'
         
