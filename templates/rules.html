@@ -266,18 +266,48 @@
                                     <div class="condition-group" data-group="0">
                                         <div class="row mb-2">
                                             <div class="col-md-3">
-                                                <select class="form-select condition-field">
-                                                    <option value="sender">Sender Email</option>
-                                                    <option value="subject">Subject</option>
-                                                    <option value="recipients">Recipients</option>
-                                                    <option value="attachments">Attachments</option>
-                                                    <option value="recipients_email_domain">Recipient Domain</option>
-                                                    <option value="wordlist_attachment">Attachment Keywords</option>
-                                                    <option value="wordlist_subject">Subject Keywords</option>
-                                                    <option value="bunit">Business Unit</option>
-                                                    <option value="department">Department</option>
-                                                    <option value="status">Status</option>
-                                                </select>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Field</label>
+                                                    <select class="form-select condition-field">
+                                                        <option value="">Select Field</option>
+                                                        <optgroup label="Email Information">
+                                                            <option value="sender">Sender</option>
+                                                            <option value="subject">Subject</option>
+                                                            <option value="recipients">Recipients</option>
+                                                            <option value="recipients_email_domain">Recipient Domain</option>
+                                                            <option value="attachments">Attachments</option>
+                                                            <option value="time">Time</option>
+                                                        </optgroup>
+                                                        <optgroup label="Employee Information">
+                                                            <option value="leaver">Leaver Status</option>
+                                                            <option value="termination_date">Termination Date</option>
+                                                            <option value="bunit">Business Unit</option>
+                                                            <option value="department">Department</option>
+                                                        </optgroup>
+                                                        <optgroup label="Content Analysis">
+                                                            <option value="wordlist_attachment">Wordlist Attachment</option>
+                                                            <option value="wordlist_subject">Wordlist Subject</option>
+                                                            <option value="justification">Justification</option>
+                                                        </optgroup>
+                                                        <optgroup label="Status & Response">
+                                                            <option value="status">Status</option>
+                                                            <option value="user_response">User Response</option>
+                                                            <option value="final_outcome">Final Outcome</option>
+                                                            <option value="case_status">Case Status</option>
+                                                        </optgroup>
+                                                        <optgroup label="Risk Assessment">
+                                                            <option value="risk_level">Risk Level</option>
+                                                            <option value="ml_risk_score">ML Risk Score</option>
+                                                            <option value="ml_anomaly_score">ML Anomaly Score</option>
+                                                            <option value="whitelisted">Whitelisted</option>
+                                                            <option value="excluded_by_rule">Excluded by Rule</option>
+                                                        </optgroup>
+                                                        <optgroup label="Case Management">
+                                                            <option value="assigned_to">Assigned To</option>
+                                                            <option value="notes">Notes</option>
+                                                        </optgroup>
+                                                    </select>
+                                                </div>
                                             </div>
                                             <div class="col-md-2">
                                                 <select class="form-select condition-operator">
@@ -450,18 +480,48 @@ function addCondition() {
         <div class="condition-group" data-group="${conditionCounter}">
             <div class="row mb-2">
                 <div class="col-md-3">
-                    <select class="form-select condition-field">
-                        <option value="sender">Sender Email</option>
-                        <option value="subject">Subject</option>
-                        <option value="recipients">Recipients</option>
-                        <option value="attachments">Attachments</option>
-                        <option value="recipients_email_domain">Recipient Domain</option>
-                        <option value="wordlist_attachment">Attachment Keywords</option>
-                        <option value="wordlist_subject">Subject Keywords</option>
-                        <option value="bunit">Business Unit</option>
-                        <option value="department">Department</option>
-                        <option value="status">Status</option>
-                    </select>
+                    <div class="mb-3">
+                        <label class="form-label">Field</label>
+                        <select class="form-select condition-field">
+                            <option value="">Select Field</option>
+                            <optgroup label="Email Information">
+                                <option value="sender">Sender</option>
+                                <option value="subject">Subject</option>
+                                <option value="recipients">Recipients</option>
+                                <option value="recipients_email_domain">Recipient Domain</option>
+                                <option value="attachments">Attachments</option>
+                                <option value="time">Time</option>
+                            </optgroup>
+                            <optgroup label="Employee Information">
+                                <option value="leaver">Leaver Status</option>
+                                <option value="termination_date">Termination Date</option>
+                                <option value="bunit">Business Unit</option>
+                                <option value="department">Department</option>
+                            </optgroup>
+                            <optgroup label="Content Analysis">
+                                <option value="wordlist_attachment">Wordlist Attachment</option>
+                                <option value="wordlist_subject">Wordlist Subject</option>
+                                <option value="justification">Justification</option>
+                            </optgroup>
+                            <optgroup label="Status & Response">
+                                <option value="status">Status</option>
+                                <option value="user_response">User Response</option>
+                                <option value="final_outcome">Final Outcome</option>
+                                <option value="case_status">Case Status</option>
+                            </optgroup>
+                            <optgroup label="Risk Assessment">
+                                <option value="risk_level">Risk Level</option>
+                                <option value="ml_risk_score">ML Risk Score</option>
+                                <option value="ml_anomaly_score">ML Anomaly Score</option>
+                                <option value="whitelisted">Whitelisted</option>
+                                <option value="excluded_by_rule">Excluded by Rule</option>
+                            </optgroup>
+                            <optgroup label="Case Management">
+                                <option value="assigned_to">Assigned To</option>
+                                <option value="notes">Notes</option>
+                            </optgroup>
+                        </select>
+                    </div>
                 </div>
                 <div class="col-md-2">
                     <select class="form-select condition-operator">

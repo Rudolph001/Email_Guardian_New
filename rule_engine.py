@@ -17,9 +17,18 @@ class RuleEngine:
         ]
         
         self.supported_fields = [
-            'sender', 'subject', 'attachments', 'recipients', 'recipients_email_domain',
-            'leaver', 'termination_date', 'wordlist_attachment', 'wordlist_subject',
-            'bunit', 'department', 'status', 'user_response', 'final_outcome', 'justification'
+            # Email Information
+            'time', 'sender', 'subject', 'attachments', 'recipients', 'recipients_email_domain',
+            # Employee Information  
+            'leaver', 'termination_date', 'bunit', 'department',
+            # Content Analysis
+            'wordlist_attachment', 'wordlist_subject', 'justification',
+            # Status & Response
+            'status', 'user_response', 'final_outcome', 'case_status',
+            # Risk Assessment
+            'risk_level', 'ml_risk_score', 'ml_anomaly_score', 'whitelisted', 'excluded_by_rule',
+            # Case Management
+            'assigned_to', 'notes'
         ]
     
     def apply_exclusion_rules(self, session_id):
