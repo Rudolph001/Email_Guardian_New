@@ -1,7 +1,9 @@
 # Email Guardian - Service Specification
 
 ## Overview
-Web-based email security analysis platform that processes exported email data to detect threats, data exfiltration, and anomalous communication patterns using rule-based filtering and machine learning.
+Email Guardian is a web-based security analysis platform that helps organizations review their email communications for potential security risks. Users upload CSV files containing email data (typically exported from Tessian or similar email security systems), and the application automatically processes this data to identify suspicious patterns, risky communications, and potential data exfiltration attempts.
+
+The platform uses machine learning algorithms to analyze email behavior and assign risk scores, while also applying configurable business rules to filter out known-good communications. Security teams can then review flagged cases through an intuitive web interface, make decisions to clear or escalate concerns, and generate security alerts when needed. The system handles large datasets efficiently through chunked processing and provides detailed analytics dashboards to understand communication patterns and security trends.
 
 ## Core Capabilities
 
@@ -59,9 +61,6 @@ GET  /admin                           # System administration
 ```bash
 # Local Development
 python local_run.py                   # SQLite, port 5000
-
-# Production  
-gunicorn --bind 0.0.0.0:5000 main:app # Requires DATABASE_URL
 ```
 
 ## Data Flow
@@ -70,18 +69,6 @@ CSV Upload → Data Validation → Chunked Processing → Rule Engine → Whitel
 ![Process Flow Diagram](static/images/process_flow.svg)
 
 The process flow diagram above accurately represents the implemented functionality, showing the complete pipeline from data upload through case management and final actions.
-
-## Security Features
-- Session-based data isolation
-- Configurable rule engine (AND/OR logic)
-- ML risk scoring (0.0-1.0 scale)  
-- Domain whitelist/trust management
-- Processing session tracking
-
-## Performance
-- Fast mode: 60-80% processing speed improvement
-- Memory efficient: Chunked processing for large files
-- Scalable: SQLite → PostgreSQL migration ready
 
 ## Target Users
 Security teams, compliance officers, IT operations, digital forensics investigators
