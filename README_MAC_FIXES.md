@@ -6,7 +6,7 @@ This document describes the fixes applied to resolve CSV upload issues on Mac sy
 Users on Mac were encountering a JavaScript error "unknownUploadURL_Title" when trying to upload CSV files, preventing successful file uploads.
 
 ## Root Cause
-The issue was caused by browser-specific JavaScript validation that was incompatible with Mac Safari/Chrome, combined with strict file validation that interfered with the upload process.
+The issue was caused by Safari browser compatibility problems on Mac. Safari has stricter JavaScript validation and file handling that interferes with the upload process. **Solution: Use Chrome browser on Mac instead of Safari.**
 
 ## Solutions Applied
 
@@ -40,10 +40,12 @@ The issue was caused by browser-specific JavaScript validation that was incompat
 
 ## Usage Instructions
 
-### Method 1: Use the Fixed Main Application
+### Method 1: Use the Fixed Main Application (Recommended)
 1. Start the application: `python3 local_run.py`
-2. Open browser: `http://localhost:5000`
+2. **Open Chrome browser (NOT Safari)**: `http://localhost:5000`
 3. Upload CSV files using the enhanced interface
+
+**Important:** Use Chrome browser on Mac, not Safari. Safari has compatibility issues with the upload functionality.
 
 ### Method 2: Use the Simple Upload Test (Recommended for troubleshooting)
 1. Run the test: `python3 simple_upload_test.py`
@@ -71,12 +73,14 @@ When exporting CSV files from Excel on Mac:
 ## Troubleshooting
 
 ### If upload still fails:
-1. Run: `python3 debug_mac_upload.py`
-2. Check file permissions: `ls -la your_file.csv`
-3. Try the simple upload test: `python3 simple_upload_test.py`
-4. Check console logs in browser developer tools
+1. **Switch to Chrome browser** - Safari has compatibility issues
+2. Run: `python3 debug_mac_upload.py`
+3. Check file permissions: `ls -la your_file.csv`
+4. Try the simple upload test: `python3 simple_upload_test.py`
+5. Check console logs in browser developer tools
 
 ### Common Issues:
+- **Browser**: Use Chrome instead of Safari on Mac (most common issue)
 - **File permissions**: Ensure CSV file is readable (644 permissions)
 - **File encoding**: Use UTF-8 encoding when exporting CSV
 - **File size**: Keep files under 500MB

@@ -149,6 +149,10 @@ email-guardian/
 - **User Experience Fix**: Eliminated need to refresh page after viewing case details or sending escalation emails
 
 ### July 22, 2025 - Migration to Replit Environment and Local Development Fixes
+- **Mac Browser Compatibility Issue Resolved**: Identified that Safari browser on Mac causes "unknownUploadURL_Title" JavaScript errors during CSV upload
+- **Browser Recommendation**: Mac users should use Chrome browser instead of Safari for optimal upload functionality
+- **JavaScript Upload Enhancements**: Created comprehensive Mac-specific upload fixes including `mac-upload-fix.js` and simplified upload test page
+- **Cross-Platform Upload Form**: Enhanced upload form with `novalidate` attribute and improved error handling for better cross-browser compatibility
 - **Database Schema Migration**: Fixed missing `description` column in `attachment_keywords` table for both PostgreSQL and SQLite
 - **Local Development Fixes**: Updated `local_run.py` to properly set `DATABASE_URL` for SQLite local development
 - **Database Migration Script**: Created `migrate_local_db.py` for seamless local database schema updates
