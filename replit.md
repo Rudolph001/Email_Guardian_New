@@ -148,7 +148,7 @@ email-guardian/
 - **Bootstrap Modal Management**: Enhanced modal lifecycle management to prevent interference with main interface interactions
 - **User Experience Fix**: Eliminated need to refresh page after viewing case details or sending escalation emails
 
-### July 22, 2025 - Database Schema Fixes and Local Development Support
+### July 22, 2025 - Upload Error Fixes and Local Development Enhancement
 - **Database Schema Migration**: Fixed missing `description` column in `attachment_keywords` table for both PostgreSQL and SQLite
 - **Local Development Fixes**: Updated `local_run.py` to properly set `DATABASE_URL` for SQLite local development
 - **Database Migration Script**: Created `migrate_local_db.py` for seamless local database schema updates
@@ -162,6 +162,9 @@ email-guardian/
   - Enhanced backdrop removal to handle all Bootstrap modal states
 - **PostgreSQL Integration**: Successfully configured PostgreSQL database for Replit deployment
 - **Local SQLite Preference**: Documented user preference for SQLite in local development environments
+- **Upload Error Resolution**: Fixed "unknown uploadurl_title" errors by improving JavaScript upload handling and database model constructors
+- **Local Testing Tools**: Created `test_upload_local.py` and enhanced `debug_local.py` for comprehensive local environment testing
+- **Error Handling Improvements**: Simplified upload form submission to use natural Flask redirects instead of AJAX, preventing JavaScript parsing errors
 
 ### July 20, 2025 - Migration to Replit Environment and Performance Optimization
 - **Project Migration**: Successfully migrated Email Guardian from Replit Agent to standard Replit environment

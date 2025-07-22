@@ -56,11 +56,10 @@ def upload_file():
         file.save(upload_path)
 
         # Create session record
-        session = ProcessingSession(
-            id=session_id,
-            filename=filename,
-            status='uploaded'
-        )
+        session = ProcessingSession()
+        session.id = session_id
+        session.filename = filename
+        session.status = 'uploaded'
         db.session.add(session)
         db.session.commit()
 

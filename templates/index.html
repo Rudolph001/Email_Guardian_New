@@ -196,7 +196,7 @@
                                         </a>
                                     {% elif session.status == 'error' %}
                                         <button class="btn btn-sm btn-outline-danger" 
-                                                onclick="showErrorDetails('{{ session.id }}', '{{ session.error_message or "Unknown error" }}')">
+                                                onclick="showErrorDetails('{{ session.id }}', '{{ (session.error_message or "Unknown error")|replace("'", "\'") }}')">
                                             <i class="fas fa-exclamation-circle"></i> View Error
                                         </button>
                                     {% else %}
@@ -294,46 +294,24 @@ function showErrorDetails(sessionId, errorMessage) {
     errorModal.show();
 }
 
-// Upload form handling
+// Upload form handling - let Flask handle the redirect naturally
 document.getElementById('uploadForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
     const fileInput = document.getElementById('fileInput');
     if (!fileInput.files.length) {
+        e.preventDefault();
         alert('Please select a file to upload.');
         return;
     }
     
-    // Show progress
-    document.getElementById('uploadProgress').style.display = 'block';
+    // Show progress indicators
+    if (document.getElementById('uploadProgress')) {
+        document.getElementById('uploadProgress').style.display = 'block';
+    }
     document.getElementById('uploadBtn').disabled = true;
+    document.getElementById('uploadBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
     
-    // Create FormData and submit
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
-    
-    fetch('/upload', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        if (response.redirected) {
-            window.location.href = response.url;
-        } else {
-            return response.text();
-        }
-    })
-    .then(html => {
-        if (html) {
-            document.body.innerHTML = html;
-        }
-    })
-    .catch(error => {
-        console.error('Upload error:', error);
-        alert('Upload failed. Please try again.');
-        document.getElementById('uploadProgress').style.display = 'none';
-        document.getElementById('uploadBtn').disabled = false;
-    });
+    // Let the form submit naturally - don't prevent default
+    // This will allow Flask's flash messages and redirects to work properly
 });
 </script>
 
