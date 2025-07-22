@@ -36,6 +36,11 @@ def setup_development_environment():
     os.environ.setdefault('SESSION_SECRET', 'dev-secret-change-in-production')
     os.environ.setdefault('FAST_MODE', 'true')
     
+    # Set database URL for local development (SQLite)
+    if not os.environ.get('DATABASE_URL'):
+        db_path = Path('instance/email_guardian.db').absolute()
+        os.environ['DATABASE_URL'] = f'sqlite:///{db_path}'
+    
     # Ensure directories exist
     directories = ['uploads', 'data', 'instance']
     for directory in directories:
