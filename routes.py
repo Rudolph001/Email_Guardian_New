@@ -568,15 +568,14 @@ def create_rule():
                 return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
 
         # Create new rule
-        rule = Rule(
-            name=data['name'],
-            rule_type=data['rule_type'],
-            description=data.get('description', ''),
-            priority=data.get('priority', 50),
-            conditions=data['conditions'],  # Already JSON string from frontend
-            actions=data.get('actions', 'flag'),
-            is_active=data.get('is_active', True)
-        )
+        rule = Rule()
+        rule.name = data['name']
+        rule.rule_type = data['rule_type']
+        rule.description = data.get('description', '')
+        rule.priority = data.get('priority', 50)
+        rule.conditions = data['conditions']  # Already JSON string from frontend
+        rule.actions = data.get('actions', 'flag')
+        rule.is_active = data.get('is_active', True)
 
         db.session.add(rule)
         db.session.commit()
@@ -753,12 +752,11 @@ def api_attachment_keywords():
                 return jsonify({'error': 'Keyword already exists'}), 400
 
             # Create new keyword
-            new_keyword = AttachmentKeyword(
-                keyword=keyword_text,
-                category=category,
-                risk_score=risk_score,
-                is_active=True
-            )
+            new_keyword = AttachmentKeyword()
+            new_keyword.keyword = keyword_text
+            new_keyword.category = category
+            new_keyword.risk_score = risk_score
+            new_keyword.is_active = True
 
             db.session.add(new_keyword)
             db.session.commit()
@@ -826,14 +824,13 @@ def api_exclusion_rules():
 
     elif request.method == 'POST':
         data = request.get_json()
-        rule = Rule(
-            name=data['name'],
-            description=data.get('description', ''),
-            rule_type='exclusion',
-            conditions=data['conditions'],
-            actions=data.get('actions', {}),
-            priority=data.get('priority', 1)
-        )
+        rule = Rule()
+        rule.name = data['name']
+        rule.description = data.get('description', '')
+        rule.rule_type = 'exclusion'
+        rule.conditions = data['conditions']
+        rule.actions = data.get('actions', {})
+        rule.priority = data.get('priority', 1)
         db.session.add(rule)
         db.session.commit()
         return jsonify({'id': rule.id, 'status': 'created'})
@@ -910,12 +907,11 @@ def api_whitelist_domains():
             if existing:
                 return jsonify({'success': False, 'message': f'Domain {domain} already exists'}), 400
 
-            whitelist_domain = WhitelistDomain(
-                domain=domain,
-                domain_type=data.get('domain_type', 'Corporate'),
-                added_by=data.get('added_by', 'Admin'),
-                notes=data.get('notes', '')
-            )
+            whitelist_domain = WhitelistDomain()
+            whitelist_domain.domain = domain
+            whitelist_domain.domain_type = data.get('domain_type', 'Corporate')
+            whitelist_domain.added_by = data.get('added_by', 'Admin')
+            whitelist_domain.notes = data.get('notes', '')
 
             db.session.add(whitelist_domain)
             db.session.commit()
@@ -1006,11 +1002,10 @@ def admin_update_whitelist():
             domain_list = [d.strip().lower() for d in domains.split('\n') if d.strip()]
             for domain in domain_list:
                 if not WhitelistDomain.query.filter_by(domain=domain).first():
-                    whitelist_entry = WhitelistDomain(
-                        domain=domain,
-                        domain_type='Corporate',
-                        added_by='Admin'
-                    )
+                    whitelist_entry = WhitelistDomain()
+                    whitelist_entry.domain = domain
+                    whitelist_entry.domain_type = 'Corporate'
+                    whitelist_entry.added_by = 'Admin'
                     db.session.add(whitelist_entry)
             db.session.commit()
             flash(f'Added {len(domain_list)} domains to whitelist', 'success')
@@ -1344,12 +1339,11 @@ def populate_default_keywords():
         ]
 
         for keyword_data in default_keywords:
-            keyword = AttachmentKeyword(
-                keyword=keyword_data['keyword'],
-                category=keyword_data['category'],
-                risk_score=keyword_data['risk_score'],
-                is_active=True
-            )
+            keyword = AttachmentKeyword()
+            keyword.keyword = keyword_data['keyword']
+            keyword.category = keyword_data['category']
+            keyword.risk_score = keyword_data['risk_score']
+            keyword.is_active = True
             db.session.add(keyword)
 
         db.session.commit()
