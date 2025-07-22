@@ -21,10 +21,10 @@ Web-based email security analysis platform that processes exported email data to
 
 ### Case Management
 - **Active Cases**: Filtered view of emails requiring security review
-- **Status Workflow**: Active → Cleared/Escalated tracking system
+- **Status Workflow**: Active → Cleared/Escalated status updates
 - **Bulk Operations**: Select and process multiple cases simultaneously
-- **Case Details**: Full email content, attachments, and metadata analysis
-- **Escalation Support**: Generate investigation emails with case context
+- **Case Details**: Full email content, attachments, ML explanations, and risk scoring
+- **Escalation Emails**: Generate security alert emails with case context and recommendations
 
 ### Analytics & Dashboards
 - **Main Dashboard**: Real-time statistics with animated counters and ML insights
@@ -35,10 +35,10 @@ Web-based email security analysis platform that processes exported email data to
 
 ### Administration
 - **Rule Configuration**: Dynamic rule creation with regex support and testing
-- **Whitelist Management**: Domain trust control with CSV import/export
-- **Session Control**: Upload tracking and processing status monitoring
-- **System Statistics**: Processing metrics and performance monitoring
-- **Risk Scoring Transparency**: Algorithm details and threshold configuration
+- **Whitelist Management**: Domain trust control with CSV import/export capability
+- **Session Monitoring**: Upload tracking and processing status display
+- **System Statistics**: Processing metrics, session counts, and performance data
+- **Risk Algorithm Transparency**: ML scoring details and threshold documentation
 
 ## Technical Architecture
 - **Backend**: Flask + SQLAlchemy + scikit-learn ML engine
@@ -65,7 +65,7 @@ gunicorn --bind 0.0.0.0:5000 main:app # Requires DATABASE_URL
 ```
 
 ## Data Flow
-CSV Upload → Rule Filtering → ML Analysis → Case Review → Action (Clear/Escalate)
+CSV Upload → Data Validation → Chunked Processing → Rule Engine → Whitelist Filter → ML Analysis → Case Generation → Dashboard Analytics & Case Management
 
 ![Process Flow Diagram](static/images/process_flow.svg)
 
