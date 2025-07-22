@@ -264,7 +264,21 @@ def dashboard(session_id):
             attachment_analytics = advanced_ml_engine.analyze_attachment_risks(session_id)
     except Exception as e:
         logger.warning(f"Could not get attachment analytics: {str(e)}")
-        attachment_analytics = {}
+        # Provide default structure that matches template expectations
+        attachment_analytics = {
+            'total_attachments': 0,
+            'risk_distribution': {
+                'high_risk_count': 0,
+                'medium_risk_count': 0,
+                'low_risk_count': 0,
+                'mean_risk': 0.0
+            },
+            'malware_indicators': {},
+            'risk_categories': {},
+            'exfiltration_patterns': {},
+            'top_risk_attachments': [],
+            'recommendations': []
+        }
 
     # Get workflow statistics for the dashboard
     workflow_stats = {}

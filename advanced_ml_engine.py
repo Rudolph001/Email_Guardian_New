@@ -72,6 +72,69 @@ class AdvancedMLEngine:
             # Check if we've already analyzed this session recently
             if hasattr(self, '_attachment_cache') and session_id in self._attachment_cache:
                 return self._attachment_cache[session_id]
+            
+            logger.info(f"Analyzing attachment risks for session {session_id}")
+            
+            # Get all records for the session
+            records = EmailRecord.query.filter_by(session_id=session_id).all()
+            
+            if not records:
+                return {
+                    'total_attachments': 0,
+                    'risk_distribution': {
+                        'high_risk_count': 0,
+                        'medium_risk_count': 0,
+                        'low_risk_count': 0,
+                        'mean_risk': 0.0
+                    },
+                    'malware_indicators': {},
+                    'risk_categories': {},
+                    'exfiltration_patterns': {},
+                    'top_risk_attachments': [],
+                    'recommendations': []
+                }
+            
+            # Analyze attachments from all records
+            total_attachments = 0
+            attachment_analysis = []
+            risk_scores = []
+            
+            for record in records:
+                if record.attachments and record.attachments.strip():
+                    attachment_info = self._analyze_single_attachment(record.attachments, record)
+                    if attachment_info:
+                        attachment_analysis.append(attachment_info)
+                        risk_scores.append(attachment_info.get('risk_score', 0))
+                        total_attachments += 1
+            
+            # Calculate risk distribution
+            high_risk_count = len([s for s in risk_scores if s >= 0.7])
+            medium_risk_count = len([s for s in risk_scores if 0.3 <= s < 0.7])
+            low_risk_count = len([s for s in risk_scores if s < 0.3])
+            mean_risk = np.mean(risk_scores) if risk_scores else 0.0
+            
+            # Generate analysis results
+            analysis = {
+                'total_attachments': total_attachments,
+                'risk_distribution': {
+                    'high_risk_count': high_risk_count,
+                    'medium_risk_count': medium_risk_count,
+                    'low_risk_count': low_risk_count,
+                    'mean_risk': float(mean_risk)
+                },
+                'malware_indicators': self._count_malware_indicators(attachment_analysis),
+                'risk_categories': self._categorize_attachment_risks(attachment_analysis),
+                'exfiltration_patterns': self._detect_exfiltration_patterns(attachment_analysis),
+                'top_risk_attachments': sorted(attachment_analysis, key=lambda x: x.get('risk_score', 0), reverse=True)[:20],
+                'recommendations': self._generate_attachment_recommendations(attachment_analysis)
+            }
+            
+            # Cache the result
+            if not hasattr(self, '_attachment_cache'):
+                self._attachment_cache = {}
+            self._attachment_cache[session_id] = analysis
+            
+            return analysis
                 
             logger.info(f"Analyzing attachment risks for session {session_id}")
             
@@ -115,7 +178,137 @@ class AdvancedMLEngine:
             
         except Exception as e:
             logger.error(f"Error analyzing attachment risks: {str(e)}")
-            return {'error': str(e)}
+            # Return default structure even on error
+            return {
+                'total_attachments': 0,
+                'risk_distribution': {
+                    'high_risk_count': 0,
+                    'medium_risk_count': 0,
+                    'low_risk_count': 0,
+                    'mean_risk': 0.0
+                },
+                'malware_indicators': {},
+                'risk_categories': {},
+                'exfiltration_patterns': {},
+                'top_risk_attachments': [],
+                'recommendations': [],
+                'error': str(e)
+            }
+    
+    def _analyze_single_attachment(self, attachment_str, record):
+        """Analyze a single attachment string"""
+        try:
+            # Simple attachment analysis
+            risk_score = 0.0
+            indicators = []
+            
+            if attachment_str:
+                attachment_lower = attachment_str.lower()
+                
+                # Check for high-risk file extensions
+                high_risk_extensions = ['.exe', '.scr', '.bat', '.cmd', '.com', '.pif', '.jar']
+                for ext in high_risk_extensions:
+                    if ext in attachment_lower:
+                        risk_score += 0.8
+                        indicators.append(f'high_risk_extension_{ext[1:]}')
+                
+                # Check for archive files
+                archive_extensions = ['.zip', '.rar', '.7z', '.tar', '.gz']
+                for ext in archive_extensions:
+                    if ext in attachment_lower:
+                        risk_score += 0.3
+                        indicators.append(f'archive_{ext[1:]}')
+                
+                # Check for document files
+                doc_extensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx']
+                for ext in doc_extensions:
+                    if ext in attachment_lower:
+                        risk_score += 0.1
+                        indicators.append(f'document_{ext[1:]}')
+            
+            return {
+                'attachment': attachment_str,
+                'risk_score': min(risk_score, 1.0),  # Cap at 1.0
+                'indicators': indicators,
+                'record_id': getattr(record, 'id', 'unknown')
+            }
+            
+        except Exception as e:
+            logger.warning(f"Error analyzing attachment: {str(e)}")
+            return None
+    
+    def _count_malware_indicators(self, attachment_analysis):
+        """Count malware indicators from attachment analysis"""
+        indicators = defaultdict(int)
+        
+        for analysis in attachment_analysis:
+            for indicator in analysis.get('indicators', []):
+                indicators[indicator] += 1
+        
+        return dict(indicators)
+    
+    def _categorize_attachment_risks(self, attachment_analysis):
+        """Categorize attachment risks"""
+        categories = {
+            'executable': 0,
+            'archive': 0,
+            'document': 0,
+            'unknown': 0
+        }
+        
+        for analysis in attachment_analysis:
+            indicators = analysis.get('indicators', [])
+            if any('high_risk_extension' in ind for ind in indicators):
+                categories['executable'] += 1
+            elif any('archive' in ind for ind in indicators):
+                categories['archive'] += 1
+            elif any('document' in ind for ind in indicators):
+                categories['document'] += 1
+            else:
+                categories['unknown'] += 1
+        
+        return categories
+    
+    def _detect_exfiltration_patterns(self, attachment_analysis):
+        """Detect potential data exfiltration patterns"""
+        patterns = {
+            'large_archives': 0,
+            'multiple_attachments': 0,
+            'suspicious_timing': 0
+        }
+        
+        # Simple pattern detection
+        archive_count = sum(1 for analysis in attachment_analysis 
+                          if any('archive' in ind for ind in analysis.get('indicators', [])))
+        
+        if archive_count > 5:
+            patterns['large_archives'] = archive_count
+        
+        if len(attachment_analysis) > 10:
+            patterns['multiple_attachments'] = len(attachment_analysis)
+        
+        return patterns
+    
+    def _generate_attachment_recommendations(self, attachment_analysis):
+        """Generate recommendations based on attachment analysis"""
+        recommendations = []
+        
+        high_risk_count = sum(1 for analysis in attachment_analysis 
+                            if analysis.get('risk_score', 0) >= 0.7)
+        
+        if high_risk_count > 0:
+            recommendations.append(f"Review {high_risk_count} high-risk attachments immediately")
+        
+        executable_count = sum(1 for analysis in attachment_analysis 
+                             if any('high_risk_extension' in ind for ind in analysis.get('indicators', [])))
+        
+        if executable_count > 0:
+            recommendations.append(f"Block {executable_count} executable attachments")
+        
+        if len(attachment_analysis) > 20:
+            recommendations.append("High volume of attachments detected - review for bulk exfiltration")
+        
+        return recommendations
     
     def analyze_sender_behavior(self, session_id):
         """Analyze individual sender behavior patterns"""
