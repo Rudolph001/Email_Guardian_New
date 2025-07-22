@@ -471,7 +471,12 @@ def admin():
     # Legacy data for backward compatibility (if needed)
     sessions = ProcessingSession.query.order_by(ProcessingSession.upload_time.desc()).all()
     whitelist_domains = WhitelistDomain.query.filter_by(is_active=True).all()
-    attachment_keywords = AttachmentKeyword.query.filter_by(is_active=True).all()
+    # Handle database schema differences between environments
+    try:
+        attachment_keywords = AttachmentKeyword.query.filter_by(is_active=True).all()
+    except Exception as e:
+        logger.error(f"Error fetching attachment keywords: {e}")
+        attachment_keywords = []
 
     # Risk scoring algorithm details for transparency
     risk_scoring_info = {
