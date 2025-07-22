@@ -30,6 +30,14 @@ class DomainManager:
             ]
         }
         
+        # Free email domains that should be excluded from whitelist recommendations
+        self.free_email_domains = {
+            'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'live.com',
+            'msn.com', 'aol.com', 'icloud.com', 'me.com', 'mac.com',
+            'ymail.com', 'rocketmail.com', 'protonmail.com', 'tutanota.com',
+            'gmx.com', 'mail.com', 'zoho.com', 'yandex.com', 'fastmail.com'
+        }
+        
         # Trust scoring weights
         self.trust_weights = {
             'communication_frequency': 0.3,
@@ -273,6 +281,10 @@ class DomainManager:
         for domain, stats in sorted_domains:
             if domain in current_whitelist:
                 continue  # Skip already whitelisted domains
+            
+            # Skip free email domains from whitelist recommendations
+            if domain in self.free_email_domains:
+                continue  # Don't recommend free email domains for whitelisting
             
             # Criteria for recommendation
             should_recommend = (

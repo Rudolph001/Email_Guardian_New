@@ -236,15 +236,7 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Category</label>
-                                <select class="form-select" id="ruleCategory">
-                                    <option value="security">Security</option>
-                                    <option value="content">Content Filter</option>
-                                    <option value="sender">Sender Rule</option>
-                                    <option value="time">Time-based</option>
-                                </select>
-                            </div>
+
                         </div>
                     </div>
 
@@ -667,7 +659,6 @@ function buildRuleConditions() {
 function saveNewRule() {
     const ruleName = document.getElementById('ruleName').value;
     const ruleType = document.getElementById('ruleType').value;
-    const ruleCategory = document.getElementById('ruleCategory').value;
     const ruleDescription = document.getElementById('ruleDescription').value;
     const rulePriority = document.getElementById('rulePriority').value;
     const ruleAction = document.getElementById('ruleAction').value;
@@ -696,7 +687,6 @@ function saveNewRule() {
     const ruleData = {
         name: ruleName,
         rule_type: ruleType,
-        category: ruleCategory,
         description: ruleDescription,
         priority: parseInt(rulePriority),
         actions: ruleAction,
