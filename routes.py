@@ -101,20 +101,27 @@ def upload_file():
             def background_processing():
                 with app.app_context():  # Create Flask application context
                     try:
+                        logger.info(f"Starting background processing for session {session_id}")
                         data_processor.process_csv(session_id, upload_path)
                         logger.info(f"Background processing completed for session {session_id}")
                     except Exception as e:
                         logger.error(f"Background processing error for session {session_id}: {str(e)}")
-                        session = ProcessingSession.query.get(session_id)
-                        if session:
-                            session.status = 'error'
-                            session.error_message = str(e)
-                            db.session.commit()
+                        # Update session with error
+                        try:
+                            session_obj = ProcessingSession.query.get(session_id)
+                            if session_obj:
+                                session_obj.status = 'error'
+                                session_obj.error_message = str(e)
+                                db.session.commit()
+                                logger.info(f"Updated session {session_id} with error status")
+                        except Exception as db_error:
+                            logger.error(f"Failed to update session with error: {str(db_error)}")
 
             # Start background thread
             thread = threading.Thread(target=background_processing)
             thread.daemon = True
             thread.start()
+            logger.info(f"Started background thread for session {session_id}")
 
             return redirect(url_for('dashboard', session_id=session_id))
         except Exception as e:

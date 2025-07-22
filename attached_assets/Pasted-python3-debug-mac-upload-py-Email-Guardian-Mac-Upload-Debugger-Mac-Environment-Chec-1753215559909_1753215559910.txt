@@ -1,0 +1,45 @@
+python3 debug_mac_upload.py 
+=== Email Guardian Mac Upload Debugger ===
+
+=== Mac Environment Check ===
+Platform: darwin
+✓ Running on macOS
+LC_ALL: Not set
+LANG: en_ZA.UTF-8
+PYTHONIOENCODING: Not set
+/Users/rudolph.vanstaden/Documents/Email_Guardian_New/debug_mac_upload.py:88: DeprecationWarning: 'locale.getdefaultlocale' is deprecated and slated for removal in Python 3.15. Use setlocale(), getencoding() and getlocale() instead.
+  print(f"Default locale: {locale.getdefaultlocale()}")
+Default locale: ('en_ZA', 'UTF-8')
+Preferred encoding: UTF-8
+=== Upload Directory Check ===
+✓ Found upload directory: uploads
+Files in upload directory: 4
+Recent uploads:
+  b2275fdf-c1b6-4ecc-81ec-8907436d5b2b_dummy_email_data_multiple_recipients.csv (2822925 bytes)
+  ab3c5fff-8226-46b4-a5b0-5561f616ac1f_dummy_email_data_multiple_recipients.csv (2822925 bytes)
+  820941c4-e681-434d-b930-ac8b7ae038bd_dummy_email_data_multiple_recipients.csv (2822925 bytes)
+  0b707295-69c9-45b0-9e2c-7a9fb6c67250_dummy_email_data_multiple_recipients.csv (2822925 bytes)
+
+=== Database Check ===
+2025-07-22 22:15:03,409 - ml_engine - INFO - MLEngine initialized with fast_mode=True
+2025-07-22 22:15:03,409 - data_processor - INFO - DataProcessor initialized with config: {'fast_mode': True, 'chunk_size': 1000, 'max_ml_records': 5000, 'ml_estimators': 50, 'progress_update_interval': 500, 'tfidf_max_features': 500, 'skip_advanced_analysis': True, 'batch_commit_size': 100}
+2025-07-22 22:15:03,409 - ml_engine - INFO - MLEngine initialized with fast_mode=True
+✓ Found 1 recent sessions:
+  ab3c5fff-8226-46b4-a5b0-5561f616ac1f: dummy_email_data_multiple_recipients.csv - completed
+
+=== Testing CSV File: uploads/b2275fdf-c1b6-4ecc-81ec-8907436d5b2b_dummy_email_data_multiple_recipients.csv ===
+File size: 2822925 bytes
+Detected encoding: ascii (confidence: 1.00)
+✓ Successfully read CSV: 19 columns, 5 rows
+Columns: ['_time', 'sender', 'subject', 'attachments', 'recipients', 'recipients_email_domain', 'time_month', 'leaver', 'termination', 'account_type', 'wordlist_attachment', 'wordlist_subject', 'bunit', 'department', 'status', 'user_response', 'final_outcome', 'policy_name', 'justifications']
+
+=== Debug Complete ===
+
+=== Recommendations ===
+For Mac users:
+1. Export CSV from Excel as 'CSV UTF-8 (Comma delimited)'
+2. Ensure file permissions allow reading: chmod 644 your_file.csv
+3. Try running: python local_run.py with these environment variables:
+   export LC_ALL=en_US.UTF-8
+   export LANG=en_US.UTF-8
+   export PYTHONIOENCODING=utf-8
