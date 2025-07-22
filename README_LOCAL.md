@@ -10,28 +10,18 @@ This guide helps you run Email Guardian on your local Windows or Mac machine.
 
 ## Quick Start
 
-1. **Run the setup script:**
+1. **Debug your environment (RECOMMENDED):**
    ```bash
-   python local_setup.py
+   python debug_local.py
    ```
+   This checks directories, database, and permissions.
 
-2. **Configure environment (optional):**
-   ```bash
-   cp .env.example .env
-   # Edit .env file with your preferences
-   ```
-
-3. **Start the application:**
+2. **Start the application:**
    ```bash
    python local_run.py
    ```
-   
-   Or use the original entry point:
-   ```bash
-   python main.py
-   ```
 
-4. **Open your browser to:** http://localhost:5000
+3. **Open your browser to:** http://localhost:5000
 
 ## Manual Setup (Alternative)
 
@@ -98,21 +88,51 @@ email-guardian/
 └── instance/              # SQLite database location
 ```
 
-## Troubleshooting
+## Troubleshooting CSV Upload Errors
+
+If you get 500 errors when uploading CSV files:
+
+### Step 1: Run Debug Script
+```bash
+python debug_local.py
+```
+This will check and fix common issues automatically.
+
+### Step 2: Manual Fixes (if needed)
+
+**Missing Dependencies:**
+```bash
+pip install flask flask-sqlalchemy pandas scikit-learn numpy networkx
+```
+
+**Missing Directories:**
+```bash
+mkdir uploads data instance
+```
+
+**Database Reset:**
+```bash
+rm -f instance/email_guardian.db
+python local_run.py  # Will recreate database
+```
+
+### Common Error Solutions
+
+- **"No module named 'app'"**: Run from project root directory
+- **"Session unavailable"**: SESSION_SECRET now set automatically in local_run.py
+- **"Database locked"**: Stop any running instances before restart
+- **Upload 500 error**: Check file permissions and run debug_local.py
 
 ### Database Issues
-The app uses SQLite by default, which requires no additional setup. The database file will be created automatically in `instance/email_guardian.db`.
+The app uses SQLite by default. Database file created automatically in `instance/email_guardian.db`.
 
 ### Port Already in Use
-If port 5000 is busy, you can change it by modifying the port number in `main.py` or `local_run.py`.
-
-### Missing Dependencies
-Run `pip install -r requirements.txt` to install all required packages.
+If port 5000 is busy, modify the port number in `local_run.py`.
 
 ## Support
 
-For issues with local setup, check:
-1. Python version (3.8+ required)
-2. All dependencies installed
-3. Required directories exist
-4. Environment variables set correctly
+For persistent issues:
+1. Run `python debug_local.py` first
+2. Check Python version (3.8+ required)
+3. Verify all dependencies installed
+4. Ensure directories exist with write permissions

@@ -33,18 +33,23 @@ def setup_development_environment():
     # Set default development environment variables
     os.environ.setdefault('FLASK_ENV', 'development')
     os.environ.setdefault('FLASK_DEBUG', 'true')
-    os.environ.setdefault('SESSION_SECRET', 'dev-secret-change-in-production')
+    os.environ.setdefault('SESSION_SECRET', 'IbV9R1thLbcFKB9-UR4sHOe1ePE-zUamWbypp3ava7o')
     os.environ.setdefault('FAST_MODE', 'true')
     
     # Set database URL for local development (SQLite)
     if not os.environ.get('DATABASE_URL'):
         db_path = Path('instance/email_guardian.db').absolute()
         os.environ['DATABASE_URL'] = f'sqlite:///{db_path}'
+        print(f"Using SQLite database: {db_path}")
     
     # Ensure directories exist
     directories = ['uploads', 'data', 'instance']
     for directory in directories:
         Path(directory).mkdir(exist_ok=True)
+        print(f"Created directory: {directory}")
+    
+    print(f"Database URL: {os.environ.get('DATABASE_URL')}")
+    print(f"Session Secret: {'***set***' if os.environ.get('SESSION_SECRET') else 'NOT SET'}")
 
 def main():
     """Main development runner"""
