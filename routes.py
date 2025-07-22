@@ -60,8 +60,16 @@ def upload_file():
         session.id = session_id
         session.filename = filename
         session.status = 'uploaded'
+        session.upload_time = datetime.utcnow()
         db.session.add(session)
-        db.session.commit()
+        try:
+            db.session.commit()
+            logger.info(f"Created session record: {session_id}")
+        except Exception as e:
+            logger.error(f"Error creating session record: {str(e)}")
+            db.session.rollback()
+            flash(f'Database error: {str(e)}', 'error')
+            return redirect(url_for('index'))
 
         # Process the file asynchronously (start processing and redirect immediately)
         flash(f'File uploaded successfully. Processing started. Session ID: {session_id}', 'success')

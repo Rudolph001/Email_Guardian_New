@@ -38,9 +38,9 @@ def setup_development_environment():
     
     # Set database URL for local development (SQLite)
     if not os.environ.get('DATABASE_URL'):
-        db_path = Path('instance/email_guardian.db').absolute()
-        os.environ['DATABASE_URL'] = f'sqlite:///{db_path}'
-        print(f"Using SQLite database: {db_path}")
+        # Use relative path that works across platforms
+        os.environ['DATABASE_URL'] = 'sqlite:///instance/email_guardian.db'
+        print(f"Using SQLite database: instance/email_guardian.db")
     
     # Ensure directories exist
     directories = ['uploads', 'data', 'instance']
