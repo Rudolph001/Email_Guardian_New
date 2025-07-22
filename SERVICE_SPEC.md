@@ -65,9 +65,11 @@ gunicorn --bind 0.0.0.0:5000 main:app # Requires DATABASE_URL
 ```
 
 ## Data Flow
-CSV Upload → Data Validation → Chunked Processing → Rule Engine → Whitelist Filter → ML Analysis → Case Generation → Dashboard Analytics & Case Management
+CSV Upload → Data Validation → Chunked Processing → Rule Engine → Whitelist Filter → ML Analysis → Case Generation → Dashboard Analytics & Case Management → Actions (Clear/Escalate/Review)
 
 ![Process Flow Diagram](static/images/process_flow.svg)
+
+The process flow diagram above accurately represents the implemented functionality, showing the complete pipeline from data upload through case management and final actions.
 
 ## Security Features
 - Session-based data isolation
