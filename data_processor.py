@@ -59,8 +59,9 @@ class DataProcessor:
             # Use optimized chunk size for performance
             chunk_size = self.chunk_size if self.enable_fast_mode else min(500, self.chunk_size)
             
-            # Process file in chunks
-            for chunk_df in pd.read_csv(file_path, chunksize=chunk_size):
+            # Process file in chunks with proper encoding
+            encoding = getattr(self, '_working_encoding', 'utf-8')
+            for chunk_df in pd.read_csv(file_path, chunksize=chunk_size, encoding=encoding):
                 try:
                     processed_count += self._process_chunk(session_id, chunk_df, column_mapping, processed_count)
                     
@@ -95,10 +96,45 @@ class DataProcessor:
             raise
     
     def _validate_csv_structure(self, file_path):
-        """Validate CSV structure and create column mapping"""
+        """Validate CSV structure and create column mapping with cross-platform support"""
         try:
-            # Read first few rows to check structure
-            sample_df = pd.read_csv(file_path, nrows=5)
+            # Detect file encoding for better Mac compatibility
+            import chardet
+            encoding_to_use = 'utf-8'
+            
+            try:
+                with open(file_path, 'rb') as f:
+                    raw_data = f.read(10000)  # Read first 10KB to detect encoding
+                encoding_result = chardet.detect(raw_data)
+                detected_encoding = encoding_result.get('encoding', 'utf-8')
+                if detected_encoding and encoding_result.get('confidence', 0) > 0.7:
+                    encoding_to_use = detected_encoding
+                logger.info(f"Detected file encoding: {detected_encoding} (confidence: {encoding_result.get('confidence', 0)})")
+            except Exception as enc_error:
+                logger.warning(f"Encoding detection failed: {str(enc_error)}, using UTF-8")
+            
+            # Try multiple encodings for Mac compatibility
+            encodings_to_try = [encoding_to_use, 'utf-8', 'utf-8-sig', 'iso-8859-1', 'cp1252', 'macroman']
+            
+            sample_df = None
+            for encoding in encodings_to_try:
+                try:
+                    # Read first few rows to check structure
+                    sample_df = pd.read_csv(file_path, nrows=5, encoding=encoding)
+                    logger.info(f"Successfully read CSV with encoding: {encoding}")
+                    # Store the working encoding for later use
+                    self._working_encoding = encoding
+                    break
+                except (UnicodeDecodeError, UnicodeError):
+                    logger.warning(f"Failed to read with encoding {encoding}, trying next...")
+                    continue
+                except Exception as e:
+                    logger.warning(f"Error reading CSV with encoding {encoding}: {str(e)}")
+                    continue
+            
+            if sample_df is None:
+                raise Exception("Could not read CSV file with any supported encoding. The file might be corrupted or in an unsupported format.")
+                
             actual_columns = [col.lower().strip() for col in sample_df.columns]
             
             # Create case-insensitive column mapping
@@ -128,15 +164,30 @@ class DataProcessor:
             raise ValueError(f"Invalid CSV format: {str(e)}")
     
     def _count_csv_rows(self, file_path):
-        """Count total rows in CSV file"""
+        """Count total rows in CSV file with cross-platform encoding support"""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            # Use the encoding that worked during validation
+            encoding = getattr(self, '_working_encoding', 'utf-8')
+            with open(file_path, 'r', encoding=encoding) as f:
                 reader = csv.reader(f)
                 row_count = sum(1 for row in reader) - 1  # Exclude header
             return max(0, row_count)
         except Exception as e:
             logger.error(f"Error counting CSV rows: {str(e)}")
-            return 0
+            # Fallback with encoding detection
+            try:
+                import chardet
+                with open(file_path, 'rb') as f:
+                    raw_data = f.read(10000)
+                result = chardet.detect(raw_data)
+                fallback_encoding = result.get('encoding', 'utf-8')
+                
+                with open(file_path, 'r', encoding=fallback_encoding) as f:
+                    reader = csv.reader(f)
+                    row_count = sum(1 for row in reader) - 1
+                return max(0, row_count)
+            except:
+                return 0
     
     def _process_chunk(self, session_id, chunk_df, column_mapping, start_index):
         """Process a chunk of CSV data"""

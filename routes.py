@@ -51,9 +51,29 @@ def upload_file():
         session_id = str(uuid.uuid4())
         filename = file.filename
 
-        # Save uploaded file
-        upload_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session_id}_{filename}")
-        file.save(upload_path)
+        # Save uploaded file with cross-platform compatibility
+        # Sanitize filename for cross-platform compatibility
+        import re
+        safe_filename = re.sub(r'[^\w\s-]', '', filename).strip()
+        safe_filename = re.sub(r'[-\s]+', '-', safe_filename)
+        if not safe_filename.endswith('.csv'):
+            safe_filename += '.csv'
+        
+        upload_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session_id}_{safe_filename}")
+        
+        # Ensure upload directory exists
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        
+        # Save file with proper error handling
+        try:
+            file.save(upload_path)
+            # Verify file was saved and is readable
+            if not os.path.exists(upload_path) or os.path.getsize(upload_path) == 0:
+                raise Exception("File upload failed - file is empty or not saved")
+        except Exception as save_error:
+            logger.error(f"File save error: {str(save_error)}")
+            flash(f'Error saving file: {str(save_error)}', 'error')
+            return redirect(url_for('index'))
 
         # Create session record
         session = ProcessingSession()

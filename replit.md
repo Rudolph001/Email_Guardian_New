@@ -170,6 +170,10 @@ email-guardian/
 - **Database Configuration**: Simplified SQLite setup to use `email_guardian_local.db` in current directory for local development
 - **Upload Error Resolution**: Fixed upload functionality by improving session record creation and error handling
 - **Model Constructor Fixes**: Updated all SQLAlchemy model instantiation to use property assignment instead of constructor parameters
+- **Cross-Platform CSV Support**: Enhanced CSV processing with automatic encoding detection for Mac compatibility
+- **Mac-Specific Fixes**: Added comprehensive encoding support (UTF-8, UTF-8-sig, macroman, iso-8859-1, cp1252) for better Mac CSV handling
+- **File Upload Improvements**: Enhanced file sanitization and cross-platform path handling for reliable uploads on both Windows and Mac
+- **Diagnostic Tools**: Created `mac_csv_test.py` for debugging CSV upload issues on Mac systems
 
 ### July 20, 2025 - Migration to Replit Environment and Performance Optimization
 - **Project Migration**: Successfully migrated Email Guardian from Replit Agent to standard Replit environment

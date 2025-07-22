@@ -35,3 +35,4 @@ networkx
 numpy
 pandas
 scikit-learn
+chardet

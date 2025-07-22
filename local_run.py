@@ -50,6 +50,16 @@ def setup_development_environment():
     
     print(f"Database URL: {os.environ.get('DATABASE_URL')}")
     print(f"Session Secret: {'***set***' if os.environ.get('SESSION_SECRET') else 'NOT SET'}")
+    
+    # Mac-specific environment setup
+    if sys.platform == 'darwin':  # macOS
+        print("🍎 Detected macOS - applying Mac-specific configurations")
+        # Set Mac-friendly locale environment
+        os.environ.setdefault('LC_ALL', 'en_US.UTF-8')
+        os.environ.setdefault('LANG', 'en_US.UTF-8')
+        # Force UTF-8 mode for better file handling
+        os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+        print("✓ Applied Mac UTF-8 configuration")
 
 def main():
     """Main development runner"""
