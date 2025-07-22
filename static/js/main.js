@@ -276,9 +276,8 @@ function autoHighlightInsights() {
         showInsightPopup('Critical cases detected! Review immediately.', 'danger');
     } else if (avgRiskScore > 0.7) {
         showInsightPopup('High average risk score detected. Monitor closely.', 'warning');
-    } else if (avgRiskScore < 0.3) {
-        showInsightPopup('Low risk profile detected. System appears secure.', 'success');
     }
+    // Removed low risk profile notification as requested
 }
 
 function showInsightPopup(message, type) {
