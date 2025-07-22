@@ -19,7 +19,12 @@ app.secret_key = os.environ.get("SESSION_SECRET", "IbV9R1thLbcFKB9-UR4sHOe1ePE-z
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+database_url = os.environ.get("DATABASE_URL")
+if not database_url:
+    # Use a simple SQLite database in the current directory for Replit
+    database_url = "sqlite:///email_guardian.db"
+    
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -33,7 +38,6 @@ db.init_app(app)
 # Ensure upload directories exist
 os.makedirs('uploads', exist_ok=True)
 os.makedirs('data', exist_ok=True)
-os.makedirs('instance', exist_ok=True)
 
 with app.app_context():
     # Import models and routes
