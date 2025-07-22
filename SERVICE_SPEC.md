@@ -26,19 +26,19 @@ Web-based email security analysis platform that processes exported email data to
 - **Case Details**: Full email content, attachments, and metadata analysis
 - **Escalation Support**: Generate investigation emails with case context
 
-### Analytics & Reporting
-- **Main Dashboard**: Real-time statistics with animated counters and insights
-- **Sender Analysis**: Communication patterns, frequency, and risk profiles
+### Analytics & Dashboards
+- **Main Dashboard**: Real-time statistics with animated counters and ML insights
+- **Sender Analysis**: Communication patterns and frequency analysis  
 - **Time Analysis**: Temporal patterns and anomaly detection over time periods
-- **Advanced ML Dashboard**: Network analysis, clustering, and pattern visualization
+- **Advanced ML Analytics**: BAU pattern analysis and attachment risk assessment
 - **Whitelist Analytics**: Domain trust analysis and recommendation engine
 
 ### Administration
 - **Rule Configuration**: Dynamic rule creation with regex support and testing
-- **Whitelist Management**: Domain trust control with bulk import/export
-- **Session Control**: Upload tracking, data cleanup, and session lifecycle
-- **System Settings**: Performance tuning, security configuration
-- **User Management**: Case assignment and access control
+- **Whitelist Management**: Domain trust control with CSV import/export
+- **Session Control**: Upload tracking and processing status monitoring
+- **System Statistics**: Processing metrics and performance monitoring
+- **Risk Scoring Transparency**: Algorithm details and threshold configuration
 
 ## Technical Architecture
 - **Backend**: Flask + SQLAlchemy + scikit-learn ML engine
@@ -74,7 +74,7 @@ CSV Upload → Rule Filtering → ML Analysis → Case Review → Action (Clear/
 - Configurable rule engine (AND/OR logic)
 - ML risk scoring (0.0-1.0 scale)  
 - Domain whitelist/trust management
-- Case audit trail
+- Processing session tracking
 
 ## Performance
 - Fast mode: 60-80% processing speed improvement
