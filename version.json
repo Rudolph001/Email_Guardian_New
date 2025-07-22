@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "updated_at": "2025-01-22T09:40:00Z",
+  "updated_by": "system",
+  "changelog": [
+    "Migrated to PostgreSQL/SQLite compatibility",
+    "Added multi-user sync management",
+    "Enhanced BAU analysis with free email filtering",
+    "Fixed modal cleanup and UI improvements",
+    "Added comprehensive admin dashboard"
+  ]
+}
