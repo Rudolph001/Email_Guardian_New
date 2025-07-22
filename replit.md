@@ -148,6 +148,14 @@ email-guardian/
 - **Bootstrap Modal Management**: Enhanced modal lifecycle management to prevent interference with main interface interactions
 - **User Experience Fix**: Eliminated need to refresh page after viewing case details or sending escalation emails
 
+### July 22, 2025 - Mac Local Development Dashboard Fix
+- **Critical Dashboard Template Error Resolution**: Fixed Jinja template error `'dict object' has no attribute 'risk_distribution'` occurring after successful CSV upload on Mac local development
+- **Template Data Structure Fix**: Updated `templates/dashboard.html` to use safe dictionary access (`attachment_analytics.get('key', default)`) instead of direct attribute access
+- **Cross-Environment Compatibility**: Ensured template works with both dictionary and object data structures returned by advanced ML engine
+- **Local Development Support**: Created `DASHBOARD_TEMPLATE_FIX.md` and `mac_dashboard_fix.py` for easy local environment fixes
+- **Mac-Specific Error Handling**: Enhanced error handling in `advanced_ml_engine.py` to return consistent data structures even on errors
+- **Template Safety Improvements**: All attachment analytics template references now use fail-safe dictionary access with fallback values
+
 ### July 22, 2025 - Migration to Replit Environment and Local Development Fixes
 - **Mac Browser Compatibility Issue Resolved**: Identified that Safari browser on Mac causes "unknownUploadURL_Title" JavaScript errors during CSV upload
 - **Browser Recommendation**: Mac users should use Chrome browser instead of Safari for optimal upload functionality
