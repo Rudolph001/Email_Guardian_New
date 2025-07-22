@@ -210,39 +210,37 @@ class DataProcessor:
                             else:
                                 record_data[expected_col] = ''
                     
-                    # Create EmailRecord
-                    email_record = EmailRecord(
-                        session_id=session_id,
-                        record_id=record_id,
-                        time=record_data.get('_time', ''),
-                        sender=record_data.get('sender', ''),
-                        subject=record_data.get('subject', ''),
-                        attachments=record_data.get('attachments', ''),
-                        recipients=record_data.get('recipients', ''),
-                        recipients_email_domain=record_data.get('recipients_email_domain', ''),
-                        leaver=record_data.get('leaver', ''),
-                        termination_date=record_data.get('termination_date', ''),
-                        wordlist_attachment=record_data.get('wordlist_attachment', ''),
-                        wordlist_subject=record_data.get('wordlist_subject', ''),
-                        bunit=record_data.get('bunit', ''),
-                        department=record_data.get('department', ''),
-                        status=record_data.get('status', ''),
-                        user_response=record_data.get('user_response', ''),
-                        final_outcome=record_data.get('final_outcome', ''),
-                        justification=record_data.get('justification', '')
-                    )
+                    # Create EmailRecord with property assignment
+                    email_record = EmailRecord()
+                    email_record.session_id = session_id
+                    email_record.record_id = record_id
+                    email_record.time = record_data.get('_time', '')
+                    email_record.sender = record_data.get('sender', '')
+                    email_record.subject = record_data.get('subject', '')
+                    email_record.attachments = record_data.get('attachments', '')
+                    email_record.recipients = record_data.get('recipients', '')
+                    email_record.recipients_email_domain = record_data.get('recipients_email_domain', '')
+                    email_record.leaver = record_data.get('leaver', '')
+                    email_record.termination_date = record_data.get('termination_date', '')
+                    email_record.wordlist_attachment = record_data.get('wordlist_attachment', '')
+                    email_record.wordlist_subject = record_data.get('wordlist_subject', '')
+                    email_record.bunit = record_data.get('bunit', '')
+                    email_record.department = record_data.get('department', '')
+                    email_record.status = record_data.get('status', '')
+                    email_record.user_response = record_data.get('user_response', '')
+                    email_record.final_outcome = record_data.get('final_outcome', '')
+                    email_record.justification = record_data.get('justification', '')
                     
                     db.session.add(email_record)
                     processed_count += 1
                     
                 except Exception as e:
-                    # Log individual record errors
-                    error = ProcessingError(
-                        session_id=session_id,
-                        error_type='record_processing',
-                        error_message=str(e),
-                        record_data={'index': index, 'data': row.to_dict()}
-                    )
+                    # Log individual record errors with property assignment
+                    error = ProcessingError()
+                    error.session_id = session_id
+                    error.error_type = 'record_processing'
+                    error.error_message = str(e)
+                    error.record_data = str({'index': index, 'data': row.to_dict()})
                     db.session.add(error)
                     logger.warning(f"Error processing record at index {index}: {str(e)}")
             
