@@ -254,6 +254,31 @@ def dashboard(session_id):
     except Exception as e:
         logger.warning(f"Could not get BAU analysis: {str(e)}")
         bau_analysis = {}
+    
+    # Ensure bau_analysis has the expected structure for template compatibility
+    if not bau_analysis or 'bau_statistics' not in bau_analysis:
+        bau_analysis = {
+            'bau_statistics': {
+                'bau_score': 0.0,
+                'confidence_level': 'Low',
+                'patterns_detected': 0,
+                'risk_level': 'Low',
+                'total_patterns': 0,
+                'behavioral_consistency': 0.0
+            },
+            'recommendations': [],
+            'pattern_analysis': {
+                'sender_patterns': {},
+                'time_patterns': {},
+                'attachment_patterns': {}
+            },
+            'risk_indicators': [],
+            'summary': {
+                'total_emails': 0,
+                'unique_senders': 0,
+                'risk_score': 0.0
+            }
+        }
 
     # Get attachment risk analytics (cached to prevent repeated calls)
     try:
