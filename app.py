@@ -18,13 +18,11 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "IbV9R1thLbcFKB9-UR4sHOe1ePE-zUamWbypp3ava7o")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Configure the database for local development
+# Configure the database - optimized for local development
 database_url = os.environ.get("DATABASE_URL")
 if not database_url:
-    # Ensure instance directory exists for local development
-    os.makedirs('instance', exist_ok=True)
-    # Use SQLite in instance directory for local development
-    database_url = "sqlite:///instance/email_guardian.db"
+    # Default to simple SQLite database in current directory
+    database_url = "sqlite:///email_guardian_local.db"
     
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
