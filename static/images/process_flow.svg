@@ -1,0 +1,145 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  
+  <!-- Title -->
+  <text x="600" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#2c3e50">
+    Email Guardian - Process Flow
+  </text>
+  
+  <!-- Process Boxes -->
+  <!-- 1. CSV Upload -->
+  <rect x="50" y="80" width="150" height="80" rx="8" fill="#3498db" stroke="#2980b9" stroke-width="2"/>
+  <text x="125" y="105" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">CSV Upload</text>
+  <text x="125" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Tessian Export</text>
+  <text x="125" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Large Files</text>
+  
+  <!-- 2. Data Validation -->
+  <rect x="270" y="80" width="150" height="80" rx="8" fill="#27ae60" stroke="#229954" stroke-width="2"/>
+  <text x="345" y="105" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Data Validation</text>
+  <text x="345" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Column Mapping</text>
+  <text x="345" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Format Check</text>
+  
+  <!-- 3. Chunked Processing -->
+  <rect x="490" y="80" width="150" height="80" rx="8" fill="#f39c12" stroke="#e67e22" stroke-width="2"/>
+  <text x="565" y="105" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Chunked Processing</text>
+  <text x="565" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">1000 Records/Batch</text>
+  <text x="565" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Memory Efficient</text>
+  
+  <!-- 4. Rule Engine -->
+  <rect x="50" y="220" width="150" height="80" rx="8" fill="#e74c3c" stroke="#c0392b" stroke-width="2"/>
+  <text x="125" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Rule Engine</text>
+  <text x="125" y="265" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Exclusion Rules</text>
+  <text x="125" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">AND/OR Logic</text>
+  
+  <!-- 5. Whitelist Filter -->
+  <rect x="270" y="220" width="150" height="80" rx="8" fill="#9b59b6" stroke="#8e44ad" stroke-width="2"/>
+  <text x="345" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Whitelist Filter</text>
+  <text x="345" y="265" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Domain Trust</text>
+  <text x="345" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Auto-Clear</text>
+  
+  <!-- 6. ML Analysis -->
+  <rect x="490" y="220" width="150" height="80" rx="8" fill="#1abc9c" stroke="#16a085" stroke-width="2"/>
+  <text x="565" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">ML Analysis</text>
+  <text x="565" y="265" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Isolation Forest</text>
+  <text x="565" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Risk Scoring</text>
+  
+  <!-- 7. Case Generation -->
+  <rect x="710" y="220" width="150" height="80" rx="8" fill="#34495e" stroke="#2c3e50" stroke-width="2"/>
+  <text x="785" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Case Generation</text>
+  <text x="785" y="265" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Risk Assessment</text>
+  <text x="785" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Priority Scoring</text>
+  
+  <!-- 8. Dashboard Analytics -->
+  <rect x="930" y="80" width="150" height="80" rx="8" fill="#8e44ad" stroke="#7d3c98" stroke-width="2"/>
+  <text x="1005" y="105" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Dashboard</text>
+  <text x="1005" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Analytics</text>
+  <text x="1005" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Visualizations</text>
+  
+  <!-- 9. Case Management -->
+  <rect x="930" y="220" width="150" height="80" rx="8" fill="#d35400" stroke="#ba4a00" stroke-width="2"/>
+  <text x="1005" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Case Management</text>
+  <text x="1005" y="265" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Review Queue</text>
+  <text x="1005" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Actions</text>
+  
+  <!-- 10. Investigation Actions -->
+  <rect x="50" y="360" width="150" height="80" rx="8" fill="#c0392b" stroke="#a93226" stroke-width="2"/>
+  <text x="125" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Clear Case</text>
+  <text x="125" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Mark Safe</text>
+  <text x="125" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Close Investigation</text>
+  
+  <rect x="270" y="360" width="150" height="80" rx="8" fill="#e67e22" stroke="#d68910" stroke-width="2"/>
+  <text x="345" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Escalate</text>
+  <text x="345" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Generate Email</text>
+  <text x="345" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Notify Team</text>
+  
+  <rect x="490" y="360" width="150" height="80" rx="8" fill="#2980b9" stroke="#2471a3" stroke-width="2"/>
+  <text x="565" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Investigate</text>
+  <text x="565" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Deep Analysis</text>
+  <text x="565" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Gather Evidence</text>
+  
+  <!-- Data Storage -->
+  <rect x="710" y="360" width="150" height="80" rx="8" fill="#17a2b8" stroke="#138496" stroke-width="2"/>
+  <text x="785" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Data Storage</text>
+  <text x="785" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Session Data</text>
+  <text x="785" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Audit Trail</text>
+  
+  <!-- Reporting -->
+  <rect x="930" y="360" width="150" height="80" rx="8" fill="#6c757d" stroke="#5a6268" stroke-width="2"/>
+  <text x="1005" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Reporting</text>
+  <text x="1005" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Statistics</text>
+  <text x="1005" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Compliance</text>
+  
+  <!-- Arrows -->
+  <!-- Horizontal flow top row -->
+  <path d="M 200 120 L 270 120" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 420 120 L 490 120" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Down from chunked processing -->
+  <path d="M 565 160 L 565 180 L 125 180 L 125 220" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Horizontal flow middle row -->
+  <path d="M 200 260 L 270 260" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 420 260 L 490 260" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 640 260 L 710 260" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Up to dashboard and case management -->
+  <path d="M 785 220 L 785 200 L 1005 200 L 1005 160" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 860 260 L 930 260" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Down to actions -->
+  <path d="M 1005 300 L 1005 320 L 125 320 L 125 360" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 345 320 L 345 360" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 565 320 L 565 360" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 785 320 L 785 360" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 1005 320 L 1005 360" stroke="#2c3e50" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2c3e50"/>
+    </marker>
+  </defs>
+  
+  <!-- Process Labels -->
+  <text x="50" y="520" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2c3e50">Key Features:</text>
+  <text x="50" y="550" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Handles large CSV files (chunked processing)</text>
+  <text x="50" y="570" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Machine Learning anomaly detection</text>
+  <text x="50" y="590" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Rule-based filtering with whitelist support</text>
+  <text x="50" y="610" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Real-time analytics and case management</text>
+  <text x="50" y="630" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Multi-action workflow (Clear/Escalate/Investigate)</text>
+  
+  <!-- Performance Stats -->
+  <text x="600" y="520" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2c3e50">Performance:</text>
+  <text x="600" y="550" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Fast Mode: 60-80% speed improvement</text>
+  <text x="600" y="570" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Memory Efficient: 1000 records per batch</text>
+  <text x="600" y="590" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Scalable: SQLite → PostgreSQL ready</text>
+  <text x="600" y="610" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Session Persistence: Resume analysis</text>
+  
+  <!-- Data Flow Legend -->
+  <rect x="50" y="680" width="1100" height="60" rx="8" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1"/>
+  <text x="600" y="700" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2c3e50">Data Flow Summary:</text>
+  <text x="600" y="720" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#34495e">
+    CSV Upload → Validation → Chunked Processing → Rule Engine → Whitelist Filter → ML Analysis → Case Generation → Review → Action
+  </text>
+</svg>
