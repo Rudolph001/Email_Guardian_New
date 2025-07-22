@@ -74,21 +74,21 @@
   <text x="345" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Notify Team</text>
   
   <rect x="490" y="360" width="150" height="80" rx="8" fill="#2980b9" stroke="#2471a3" stroke-width="2"/>
-  <text x="565" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Investigate</text>
-  <text x="565" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Deep Analysis</text>
-  <text x="565" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Gather Evidence</text>
+  <text x="565" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Review Case</text>
+  <text x="565" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">View Details</text>
+  <text x="565" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">ML Explanation</text>
   
   <!-- Data Storage -->
   <rect x="710" y="360" width="150" height="80" rx="8" fill="#17a2b8" stroke="#138496" stroke-width="2"/>
   <text x="785" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Data Storage</text>
   <text x="785" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Session Data</text>
-  <text x="785" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Audit Trail</text>
+  <text x="785" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Database</text>
   
-  <!-- Reporting -->
+  <!-- Analytics -->
   <rect x="930" y="360" width="150" height="80" rx="8" fill="#6c757d" stroke="#5a6268" stroke-width="2"/>
-  <text x="1005" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Reporting</text>
+  <text x="1005" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Analytics</text>
   <text x="1005" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Statistics</text>
-  <text x="1005" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Compliance</text>
+  <text x="1005" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Insights</text>
   
   <!-- Arrows -->
   <!-- Horizontal flow top row -->
@@ -127,7 +127,7 @@
   <text x="50" y="570" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Machine Learning anomaly detection</text>
   <text x="50" y="590" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Rule-based filtering with whitelist support</text>
   <text x="50" y="610" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Real-time analytics and case management</text>
-  <text x="50" y="630" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Multi-action workflow (Clear/Escalate/Investigate)</text>
+  <text x="50" y="630" font-family="Arial, sans-serif" font-size="12" fill="#34495e">• Multi-action workflow (Clear/Escalate/Review)</text>
   
   <!-- Performance Stats -->
   <text x="600" y="520" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2c3e50">Performance:</text>
