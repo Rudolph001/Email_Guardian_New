@@ -6,7 +6,9 @@ Email Guardian is a comprehensive web application designed for analyzing Tessian
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+- **Communication style**: Simple, everyday language
+- **Local development database**: SQLite (preferred for local development and testing)
+- **Production database**: PostgreSQL (for Replit deployment and production use)
 
 ## System Architecture
 
@@ -83,14 +85,27 @@ Email Guardian follows a modular Flask-based architecture with clear separation 
 
 ## Deployment Strategy
 
-The application is designed for local deployment with the following characteristics:
+The application is designed for flexible deployment across multiple environments:
 
+### Local Development (Preferred)
 - **Target Platforms**: Windows and Mac systems
-- **Database**: SQLite for simplicity (PostgreSQL-ready architecture)
-- **Server**: Gunicorn on port 5000 (0.0.0.0:5000)
+- **Database**: SQLite (`instance/email_guardian.db`) - No setup required
+- **Runner**: `python local_run.py` for automatic environment setup
+- **Configuration**: Automatic SQLite configuration with development defaults
 - **File Storage**: Local filesystem with organized directory structure
 - **Session Management**: File-based with automatic compression
-- **Configuration**: Environment variable based with sensible defaults
+
+### Replit/Production Deployment
+- **Database**: PostgreSQL with automatic provisioning
+- **Server**: Gunicorn on port 5000 (0.0.0.0:5000)
+- **Configuration**: Environment variable based (DATABASE_URL, SESSION_SECRET)
+- **Scaling**: PostgreSQL supports concurrent users and larger datasets
+
+### Database Architecture
+- **Dual-compatible design**: Same codebase works with both SQLite and PostgreSQL
+- **Local development**: SQLite for simplicity and zero configuration
+- **Production**: PostgreSQL for performance and reliability
+- **Migration ready**: Easy transition from SQLite to PostgreSQL when needed
 
 ### Directory Structure
 ```
@@ -139,6 +154,14 @@ email-guardian/
 - **Database Migration Script**: Created `migrate_local_db.py` for seamless local database schema updates
 - **Environment Compatibility**: Ensured application works both locally (SQLite) and on Replit (PostgreSQL)
 - **UI Improvements**: Removed low risk profile insight popup notification per user request
+- **Modal Interface Bug Resolution**: Implemented comprehensive modal cleanup system to fix persistent backdrop issues:
+  - Enhanced `cleanupExistingModals()` function with multiple fallback strategies
+  - Added dual event listeners (`hide.bs.modal` and `hidden.bs.modal`) for complete cleanup
+  - Implemented periodic background cleanup (5-second intervals) as failsafe
+  - Added emergency escape key handler for forced modal cleanup
+  - Enhanced backdrop removal to handle all Bootstrap modal states
+- **PostgreSQL Integration**: Successfully configured PostgreSQL database for Replit deployment
+- **Local SQLite Preference**: Documented user preference for SQLite in local development environments
 
 ### July 20, 2025 - Migration to Replit Environment and Performance Optimization
 - **Project Migration**: Successfully migrated Email Guardian from Replit Agent to standard Replit environment
